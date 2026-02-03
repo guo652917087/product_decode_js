@@ -22,42 +22,159 @@
  *   - Values can be 1-N bytes depending on type
  *   - Parsing continues until end of payload
  * 
- * Common LPP Types:
- *   0x01 - Model ID (1 byte): Device model identifier
- *   0x02 - Downlink count (4 bytes): Number of downlinks received
- *   0x03 - Tamper event (1 byte): Tamper detection event
- *   0x04 - Battery voltage (2 bytes BE): Voltage in mV
- *   0x05 - Battery event (1 byte): Battery low voltage event
- *   0x06 - Boot version (string): Null-terminated firmware boot version
- *   0x07 - Main version (string): Null-terminated main firmware version
- *   0x08 - App version (string): Null-terminated application version
- *   0x09 - Hardware version (string): Null-terminated hardware version
- *   0x0a - P2P update frequency (4 bytes): P2P update frequency
- *   0x0b - P2P config frequency (4 bytes): P2P config frequency
- *   0x0c - Radio chip (string): Null-terminated radio chip model
- *   0x0d - Reset cause (string): Null-terminated reset reason
- *   0x0e - LoRaWAN region (string): Null-terminated region info
- *   0x0f - AT response (string): Null-terminated AT command response
- *   0x10 - Temperature (2 bytes BE, signed): Temperature in °C * 100
- *   0x11 - Temperature event (1 byte): Temperature threshold event
- *   0x12 - Humidity (2 bytes BE): Humidity in %RH * 10
- *   0x13 - Humidity event (1 byte): Humidity threshold event
- *   0x14 - SOS button (1 byte): SOS/Emergency button press event
- *   0x15 - Gas concentration (2 bytes BE): Gas concentration in ppm
- *   0x18 - Magnet/Door state (1 byte): Door sensor state
- *   0x22 - Relay state (1 byte): Socket/relay state
- *   0x77 - Tamper state (1 byte): Current tamper status
- *   0x78 - Heartbeat interval (4 bytes BE): Heartbeat interval in seconds
- *   0x79 - Local time (4 bytes BE): Unix timestamp
- *   0x7d - Battery voltage state (1 byte): Battery status (0=normal, 1=low)
- *   0x80 - Timer status (4 bytes BE): Timer configuration bitfield
- *   0x94 - RS485 address (1 byte): Modbus RS485 slave address
- *   0x95 - Modbus data (variable): Modbus register data block
- *   0x96 - Lock state (1 byte): Lock/unlock state
- *   0x97 - Voltage RMS (2 bytes BE): AC voltage in V * 10
- *   0x98 - Current RMS (2 bytes BE): AC current in A * 100
- *   0x99 - Active power (2 bytes BE, signed): Power in W * 100
- *   0x9a - Energy consumption (4 bytes BE): Energy in kWh * 100
+ * LPP Type Reference (Custom Protocol):
+ * =======================================
+ * All devices use these standardized type codes for data transmission.
+ * Each type defines the format and length of the value that follows.
+ * 
+ * Device Information Types:
+ *   0x01 - Model ID (1 byte): 
+ *          Device model identifier, maps to MODEL_MAP
+ *          Example: 0x46 = W8004, 0x48 = DS-501, 0x03 = AN-303
+ *   
+ *   0x06 - Boot version (null-terminated string): Bootloader firmware version
+ *   0x07 - Main version (null-terminated string): Main firmware version  
+ *   0x08 - App version (null-terminated string): Application firmware version
+ *   0x09 - Hardware version (null-terminated string): Hardware revision
+ *   0x0c - Radio chip (null-terminated string): Radio chip model (e.g., "SX1262")
+ *   0x0d - Reset cause (null-terminated string): Last reset reason
+ *   0x0e - LoRaWAN region (null-terminated string): Region configuration
+ * 
+ * Communication Status Types:
+ *   0x02 - Downlink count (4 bytes BE): 
+ *          Total number of downlinks received by device
+ *   
+ *   0x0f - AT response (null-terminated string): 
+ *          Response to AT commands, appears on fPort 220 uplinks
+ *          Example responses: "OK\r\n", "ERROR\r\n", "+VERSION:1.2.3\r\n"
+ *   
+ *   0x78 - Heartbeat interval (4 bytes BE): 
+ *          Current heartbeat/uplink interval in seconds
+ *   
+ *   0x79 - Local time (4 bytes BE): 
+ *          Device local time as Unix timestamp (seconds since 1970-01-01)
+ * 
+ * Power Management Types:
+ *   0x04 - Battery voltage (2 bytes BE): 
+ *          Battery voltage in millivolts (mV)
+ *          Example: 0x0BB8 = 3000mV = 3.0V
+ *   
+ *   0x05 - Battery event (1 byte): 
+ *          Battery low voltage event flag
+ *          0 = Normal, 1 = Low battery detected
+ *   
+ *   0x7d - Battery voltage state (1 byte): 
+ *          Current battery status
+ *          0 = Normal/good, 1 = Low battery warning
+ * 
+ * Environmental Sensor Types:
+ *   0x10 - Temperature (2 bytes BE, signed): 
+ *          Temperature in Celsius * 100
+ *          Example: 0x09C4 = 2500 = 25.00°C
+ *          Negative temps: 0xFC18 = -1000 = -10.00°C
+ *   
+ *   0x11 - Temperature event (1 byte): 
+ *          Temperature threshold event (high/low alarm)
+ *   
+ *   0x12 - Humidity (2 bytes BE): 
+ *          Relative humidity in %RH * 10
+ *          Example: 0x01F4 = 500 = 50.0%RH
+ *   
+ *   0x13 - Humidity event (1 byte): 
+ *          Humidity threshold event (high/low alarm)
+ *   
+ *   0x15 - Gas concentration (2 bytes BE): 
+ *          Gas/smoke concentration in ppm (parts per million)
+ *          Used by fire/gas detectors like JTY-AN-503A
+ * 
+ * Security & Alarm Types:
+ *   0x03 - Tamper event (1 byte): 
+ *          Tamper detection event trigger
+ *          Sent when device cover is opened or tampering detected
+ *   
+ *   0x77 - Tamper state (1 byte): 
+ *          Current tamper status
+ *          0 = Normal/closed, 1 = Tamper detected/open
+ *   
+ *   0x14 - SOS button (1 byte): 
+ *          Emergency/SOS button press event
+ *          Used by panic buttons like AN-301
+ *   
+ *   0x18 - Magnet/Door state (1 byte): 
+ *          Door/window contact sensor state
+ *          0 = Closed, 1 = Open
+ *          Used by AN-305A, AN-204B door sensors
+ * 
+ * Control & Actuator Types:
+ *   0x22 - Relay/Socket state (1 byte): 
+ *          Power socket or relay state
+ *          0 = OFF, 1 = ON
+ *          Used by DS-501 smart sockets
+ *   
+ *   0x96 - Lock state (1 byte): 
+ *          Lock/unlock state
+ *          0 = Unlocked, 1 = Locked
+ * 
+ * Timer Configuration Types:
+ *   0x80 - Timer status (4 bytes BE): 
+ *          Timer configuration bitfield (32 bits)
+ *          Bit 0 (0x00000001): Timer close enabled
+ *          Bit 1 (0x00000002): Timer open enabled
+ *          Bit 30 (0x40000000): Timer lock enabled
+ *          Bit 31 (0x80000000): Timer unlock enabled
+ *          Used by DS-501 for scheduled operations
+ * 
+ * Electrical Measurement Types (for power monitoring devices):
+ *   0x97 - Voltage RMS (2 bytes BE): 
+ *          AC RMS voltage in Volts * 10
+ *          Example: 0x0898 = 2200 = 220.0V
+ *   
+ *   0x98 - Current RMS (2 bytes BE): 
+ *          AC RMS current in Amperes * 100
+ *          Example: 0x012C = 300 = 3.00A
+ *   
+ *   0x99 - Active power (2 bytes BE, signed): 
+ *          Active power consumption in Watts * 100
+ *          Example: 0x19C8 = 6600 = 66.00W
+ *   
+ *   0x9a - Energy consumption (4 bytes BE): 
+ *          Cumulative energy in kilowatt-hours * 100
+ *          Example: 0x00002710 = 10000 = 100.00 kWh
+ * 
+ * Modbus/Industrial Protocol Types:
+ *   0x94 - RS485 address (1 byte): 
+ *          Modbus RTU slave address for RS485 devices
+ *          Default usually 0x01
+ *   
+ *   0x95 - Modbus data block (variable length): 
+ *          Modbus register data block
+ *          Format: [length][register_data...]
+ *          Used by W8004 thermostat and other Modbus devices
+ *          
+ *          W8004 Modbus Block Structure:
+ *            Byte 0-1: Block ID (0xF000=control status, other=device status)
+ *            Byte 2+:  Register values (2 bytes each, big-endian)
+ *            
+ *            Device Status Block (starts from register 0x0000):
+ *              Reg 0x0000: Device version (HW:SW)
+ *              Reg 0x0001: Device status bits (power, lock, valve)
+ *              Reg 0x0002: Current temperature (°C * 100)
+ *              Reg 0x0003: Current humidity (%RH * 100)
+ *              Reg 0x0004: Set temperature (°C * 100)
+ *              Reg 0x0005: Work mode (0=auto,1=cool,2=heat,3=vent)
+ *              Reg 0x0006: Fan speed (0=off,1=low,2=mid,3=high,4=auto)
+ *              Reg 0x0007: Cumulative on time (* 10 minutes)
+ *              Reg 0x0008: Cumulative valve open time (* 10 minutes)
+ * 
+ * P2P Communication Types:
+ *   0x0a - P2P update frequency (4 bytes BE): Peer-to-peer update interval
+ *   0x0b - P2P config frequency (4 bytes BE): Peer-to-peer config interval
+ * 
+ * UPLINK AT RESPONSE (Fport 220):
+ * --------------------------------
+ * When device responds to AT commands, it uses fPort 220
+ * Response format: ASCII text like "OK\r\n"
+ * This response is parsed as regular text in the atResponse field
  * 
  * DOWNLINK:
  * ---------
@@ -66,28 +183,111 @@
  *    All devices support AT commands for configuration and control.
  *    Format: 0xFF + ASCII(AT command) + 0x0D 0x0A (CRLF)
  *    
- *    Example AT Commands:
+ *    Common AT Commands:
  *      - AT+REBOOT           : Reboot device
- *      - AT+HBTPKTTIMS=3600  : Set heartbeat interval to 3600 seconds
+ *      - AT+HBTPKTTIMS=3600  : Set heartbeat interval (seconds)
+ *      - AT+QUERY            : Query device status
+ *      - AT+VERSION          : Query firmware version
  *    
  *    Multiple Commands:
- *      Separate commands with CRLF (0x0D 0x0A)
- *      Always place AT+REBOOT as the last command when setting parameters
+ *      Separate each command with CRLF (0x0D 0x0A)
+ *      Always place AT+REBOOT as the LAST command when setting parameters
+ *      Device needs reboot for many parameter changes to take effect
  *    
  *    Example: Send "AT+REBOOT"
+ *      Input: {at: "AT+REBOOT"}
  *      Payload: FF 41 54 2B 52 45 42 4F 4F 54 0D 0A
  *      Fport: 220
+ *    
+ *    Example: Multiple commands
+ *      Input: {at: ["AT+HBTPKTTIMS=3600", "AT+REBOOT"]}
+ *      Payload: FF 41 54 2B 48 42 ... 0D 0A 41 54 ... 0D 0A
+ *      Fport: 220
  * 
- * 2. Control Commands (Fport 2):
+ * 2. Serial Passthrough (Fport 220):
+ *    Direct serial communication for Modbus RTU or other protocols.
+ *    Format: 0xFE + raw bytes
+ *    
+ *    Used when you want to send complete Modbus RTU frames including CRC
+ *    without device-specific encoding.
+ *    
+ *    Example: Send Modbus RTU frame
+ *      Input: {serialPassthrough: [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, 
+ *                                   0x09, 0xC4, 0x00, 0x01, 0x00, 0x01, 0xC6, 0x1D]}
+ *      Payload: FE 01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D
+ *      Fport: 220
+ * 
+ * 3. Modbus 06 Instruction (Fport 2):
+ *    W8004-specific simplified single register write command.
+ *    Format: 0x06 0x06 [RegHi] [RegLo] [ValHi] [ValLo]
+ *    Total: 6 bytes
+ *    
+ *    This is automatically generated when setting a single W8004 control field.
+ *    
+ *    Example: Set temperature to 25.5°C
+ *      Input: {setTemperature: 25.5}
+ *      Register: 0x0004, Value: 2550 (25.5 * 100)
+ *      Payload: 06 06 00 04 09 F6
+ *      Fport: 2
+ * 
+ * 4. Modbus 07 Instruction (Fport 2):
+ *    W8004-specific full Modbus frame passthrough.
+ *    Format: 0x07 + Complete Modbus RTU frame (including slave addr, function code, CRC)
+ *    
+ *    Automatically generated when setting multiple consecutive W8004 registers.
+ *    Uses Modbus function code 0x10 (Write Multiple Registers).
+ *    
+ *    W8004 Register Map (from user manual):
+ *      0x0004 - setTemperature (value * 100, signed 16-bit)
+ *      0x0005 - workMode (0=auto, 1=cool, 2=heat, 3=vent)
+ *      0x0006 - fanSpeed (0=off, 1=low, 2=mid, 3=high, 4=auto)
+ *      0xF000 - powerState (0=off, 1=on) - remote control
+ *      0xF001 - keyLockState (0=unlocked, 1=locked) - remote control
+ *    
+ *    Example: Set temperature, workMode, and fanSpeed together
+ *      Input: {setTemperature: 25.5, workMode: 1, fanSpeed: 2}
+ *      Modbus Frame: 01 10 00 04 00 03 06 09 F6 00 01 00 02 [CRC]
+ *      Payload: 07 01 10 00 04 00 03 06 09 F6 00 01 00 02 [CRC_Lo] [CRC_Hi]
+ *      Fport: 2
+ * 
+ * 5. Modbus Raw Frame (Fport 2):
+ *    Generic Modbus frame for any Modbus-compatible device.
+ *    Format: 0x07 + Complete Modbus frame (you provide the entire frame with CRC)
+ *    
+ *    Use this when you need full control over the Modbus frame.
+ *    
+ *    Example:
+ *      Input: {modbusHex: "01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D"}
+ *      Payload: 07 01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D
+ *      Fport: 2
+ * 
+ * 6. Device Control Commands (Fport 2):
  *    Used for device-specific control operations.
- *    Format varies by device type and is defined in device documentation.
+ *    Format varies by device type.
  *    
  *    Common control fields (use numeric values for Modbus/BACnet compatibility):
- *      - powerState: 0=off, 1=on
+ *      - powerState: 0=off, 1=on (replaces all device-specific power fields)
  *      - lockState: 0=unlocked, 1=locked
- *      - setTemperature: Numeric value (will be scaled internally)
+ *      - setTemperature: Numeric value in °C (will be scaled internally)
  *      - workMode: 0=auto, 1=cool, 2=heat, 3=vent
  *      - fanSpeed: 0=off, 1=low, 2=mid, 3=high, 4=auto
+ *      - keyLockState: 0=unlocked, 1=locked
+ *    
+ *    DS-501 Smart Socket Commands:
+ *      - {powerState: 1} - Turn socket on
+ *      - {powerState: 0} - Turn socket off  
+ *      - {lockState: 1}  - Lock socket (prevent manual control)
+ *      - {lockState: 0}  - Unlock socket
+ *    
+ *    W8004 Thermostat Commands:
+ *      Single attribute uses 06 instruction, multiple uses 07 instruction
+ *      - {powerState: 1}         - Turn on (register 0xF000)
+ *      - {setTemperature: 25.5}  - Set target temp (register 0x0004)
+ *      - {workMode: 1}           - Set to cool mode (register 0x0005)
+ *      - {fanSpeed: 2}           - Set to medium speed (register 0x0006)
+ *      
+ *    Note: For Modbus/BACnet compatibility, always use powerState (not remotePower 
+ *          or other device-specific names). This ensures consistent addressing.
  * 
  * MODBUS TCP & BACNET BIP INTEGRATION:
  * ====================================
