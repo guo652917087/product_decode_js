@@ -233,6 +233,44 @@ function toUint32(b1, b2, b3, b4) {
 }
 
 /**
+ * Convert hex string to byte array
+ * Accepts formats: "01020304", "01 02 03 04", "0x01 0x02 0x03 0x04"
+ */
+function hexToBytes(hex) {
+  if (typeof hex !== 'string') return [];
+  hex = hex.replace(/\s+/g, '').replace(/0x/gi, '');
+  if (hex.length % 2 !== 0) hex = '0' + hex;
+  const out = [];
+  for (let i = 0; i < hex.length; i += 2) {
+    out.push(parseInt(hex.substr(i, 2), 16));
+  }
+  return out;
+}
+
+/**
+ * Calculate Modbus CRC16 (standard algorithm)
+ * Used for Modbus RTU frames
+ * 
+ * @param {number[]} data - Byte array without CRC
+ * @returns {number[]} - Two CRC bytes [CRC_LOW, CRC_HIGH] (little-endian)
+ */
+function modbusCRC16(data) {
+  let crc = 0xFFFF;
+  for (let i = 0; i < data.length; i++) {
+    crc ^= data[i] & 0xFF;
+    for (let j = 0; j < 8; j++) {
+      if (crc & 0x0001) {
+        crc = (crc >> 1) ^ 0xA001;
+      } else {
+        crc >>= 1;
+      }
+    }
+  }
+  // Return as little-endian bytes [LOW, HIGH]
+  return [(crc & 0xFF), ((crc >> 8) & 0xFF)];
+}
+
+/**
  * Parse Modbus data block (type 0x95)
  * Used by W8004 thermostat and other Modbus devices
  * 
@@ -636,10 +674,13 @@ function decodeUplink(input) {
 /**
  * Encode downlink message to device
  * 
- * Supports three modes:
- * 1. AT Commands (input.data.at) -> fPort 220
- * 2. Device Control (input.data.{powerState, lockState, etc.}) -> fPort 2
- * 3. Raw Bytes (input.data.rawBytes) -> fPort 2
+ * Supports multiple modes:
+ * 1. AT Commands (input.data.at) -> fPort 220, 0xFF prefix
+ * 2. Serial Passthrough (input.data.serialPassthrough) -> fPort 220, 0xFE prefix
+ * 3. Modbus Raw (input.data.modbusRaw) -> fPort 2, 0x07 prefix
+ * 4. Modbus Hex (input.data.modbusHex) -> fPort 2, 0x07 prefix
+ * 5. Device Control (input.data.{powerState, lockState, etc.}) -> fPort 2
+ * 6. Raw Bytes (input.data.rawBytes) -> fPort 2
  * 
  * @param {object} input
  * @param {object} input.data - Payload data to encode
@@ -659,6 +700,7 @@ function encodeDownlink(input) {
   // ============================================================
   // Format: 0xFF + ASCII(command) + CRLF
   // Multiple commands separated by CRLF
+  // All products support AT commands for configuration
   // ============================================================
   if (data.at !== undefined && data.at !== null) {
     const atCommands = Array.isArray(data.at) ? data.at : [data.at];
@@ -687,7 +729,85 @@ function encodeDownlink(input) {
   }
 
   // ============================================================
-  // MODE 2: Raw Bytes (fPort 2)
+  // MODE 2: Serial Passthrough (fPort 220)
+  // ============================================================
+  // Format: 0xFE + passthrough bytes
+  // Used for direct serial communication (e.g., Modbus RTU)
+  // Example: {serialPassthrough: [0x01, 0x10, 0x00, 0x04, ...]}
+  // Result: FE 01 10 00 04 ...
+  // ============================================================
+  if (data.serialPassthrough !== undefined) {
+    let passthroughBytes = [];
+    
+    if (Array.isArray(data.serialPassthrough)) {
+      passthroughBytes = data.serialPassthrough.map(b => b & 0xFF);
+    } else if (typeof data.serialPassthrough === 'string') {
+      passthroughBytes = hexToBytes(data.serialPassthrough);
+    } else {
+      errors.push("serialPassthrough must be byte array or hex string");
+      return { bytes: [], fPort: 220, errors, warnings };
+    }
+    
+    if (passthroughBytes.length === 0) {
+      errors.push("Empty serialPassthrough command");
+      return { bytes: [], fPort: 220, errors, warnings };
+    }
+    
+    // Build payload: 0xFE + passthrough bytes
+    bytes = [0xFE].concat(passthroughBytes);
+    
+    return { bytes, fPort: 220, errors, warnings };
+  }
+
+  // ============================================================
+  // MODE 3: Modbus Raw Frame (fPort 2)
+  // ============================================================
+  // Format: 0x07 + complete Modbus frame (with CRC)
+  // Used for W8004 and other Modbus devices
+  // Allows multiple register writes in one command
+  // 
+  // Example 1 - Using byte array:
+  //   {modbusRaw: [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, 
+  //                0x09, 0xC4, 0x00, 0x01, 0x00, 0x01, 0xC6, 0x1D]}
+  // 
+  // Example 2 - Using hex string:
+  //   {modbusHex: "01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D"}
+  //   or {modbusHex: "0110000400030609C4000100 01C61D"}
+  // 
+  // Result: 07 + Modbus frame
+  // ============================================================
+  if (data.modbusRaw !== undefined || data.modbusHex !== undefined) {
+    let modbusFrame = [];
+    
+    if (data.modbusRaw !== undefined) {
+      if (Array.isArray(data.modbusRaw)) {
+        modbusFrame = data.modbusRaw.map(b => b & 0xFF);
+      } else {
+        errors.push("modbusRaw must be byte array");
+        return { bytes: [], fPort: 2, errors, warnings };
+      }
+    } else if (data.modbusHex !== undefined) {
+      if (typeof data.modbusHex === 'string') {
+        modbusFrame = hexToBytes(data.modbusHex);
+      } else {
+        errors.push("modbusHex must be hex string");
+        return { bytes: [], fPort: 2, errors, warnings };
+      }
+    }
+    
+    if (modbusFrame.length === 0) {
+      errors.push("Empty Modbus frame");
+      return { bytes: [], fPort: 2, errors, warnings };
+    }
+    
+    // Build payload: 0x07 + Modbus frame
+    bytes = [0x07].concat(modbusFrame);
+    
+    return { bytes, fPort: 2, errors, warnings };
+  }
+
+  // ============================================================
+  // MODE 4: Raw Bytes (fPort 2)
   // ============================================================
   if (Array.isArray(data.rawBytes) && data.rawBytes.length > 0) {
     bytes = data.rawBytes.map(b => b & 0xFF);
@@ -695,7 +815,7 @@ function encodeDownlink(input) {
   }
 
   // ============================================================
-  // MODE 3: Device Control Commands (fPort 2)
+  // MODE 5: Device Control Commands (fPort 2)
   // ============================================================
   // Supported fields (use numeric values only):
   //   - powerState: 0=off, 1=on
@@ -747,47 +867,117 @@ function encodeDownlink(input) {
     }
   }
 
+  // ============================================================
   // W8004 Thermostat Commands (Modbus-based)
+  // ============================================================
+  // W8004 supports two instruction formats:
+  //   - 06 instruction: Single register write (simplified)
+  //   - 07 instruction: Full Modbus frame (for multiple registers)
+  // 
+  // Register mapping:
+  //   0x0004: setTemperature (value * 100)
+  //   0x0005: workMode (0=auto, 1=cool, 2=heat, 3=vent)
+  //   0x0006: fanSpeed (0=off, 1=low, 2=mid, 3=high, 4=auto)
+  //   0xF000: powerState (0=off, 1=on)
+  //   0xF001: keyLockState (0=unlocked, 1=locked)
+  // ============================================================
   if (data.model === "W8004" || data.setTemperature !== undefined || data.workMode !== undefined || data.fanSpeed !== undefined) {
-    // W8004 uses Modbus commands over LoRaWAN
-    // Format: 0x06/0x07 + Modbus frame
+    // Collect W8004 control attributes
+    const w8004Attrs = [];
     
-    // Single register write (0x06 command)
     if (data.setTemperature !== undefined) {
       const tempValue = Math.round(Number(data.setTemperature) * 100);
-      const hiReg = 0x00, loReg = 0x04; // Register 0x0004
-      const hiVal = (tempValue >> 8) & 0xFF;
-      const loVal = tempValue & 0xFF;
-      bytes = [0x06, 0x06, hiReg, loReg, hiVal, loVal];
-      return { bytes, fPort: 2, errors, warnings };
+      w8004Attrs.push({ register: 0x0004, value: tempValue, name: 'setTemperature' });
     }
     
     if (data.workMode !== undefined) {
       const mode = Math.max(0, Math.min(3, Math.round(Number(data.workMode))));
-      const hiReg = 0x00, loReg = 0x05; // Register 0x0005
-      bytes = [0x06, 0x06, hiReg, loReg, 0x00, mode];
-      return { bytes, fPort: 2, errors, warnings };
+      w8004Attrs.push({ register: 0x0005, value: mode, name: 'workMode' });
     }
     
     if (data.fanSpeed !== undefined) {
       const speed = Math.max(0, Math.min(4, Math.round(Number(data.fanSpeed))));
-      const hiReg = 0x00, loReg = 0x06; // Register 0x0006
-      bytes = [0x06, 0x06, hiReg, loReg, 0x00, speed];
-      return { bytes, fPort: 2, errors, warnings };
+      w8004Attrs.push({ register: 0x0006, value: speed, name: 'fanSpeed' });
     }
     
-    if (data.powerState !== undefined) {
+    if (data.powerState !== undefined && (data.model === "W8004" || w8004Attrs.length > 0)) {
       const state = Number(data.powerState) ? 1 : 0;
-      const hiReg = 0xF0, loReg = 0x00; // Register 0xF000
-      bytes = [0x06, 0x06, hiReg, loReg, 0x00, state];
-      return { bytes, fPort: 2, errors, warnings };
+      w8004Attrs.push({ register: 0xF000, value: state, name: 'powerState' });
     }
     
-    if (data.keyLockState !== undefined) {
+    if (data.keyLockState !== undefined && (data.model === "W8004" || w8004Attrs.length > 0)) {
       const state = Number(data.keyLockState) ? 1 : 0;
-      const hiReg = 0xF0, loReg = 0x01; // Register 0xF001
-      bytes = [0x06, 0x06, hiReg, loReg, 0x00, state];
+      w8004Attrs.push({ register: 0xF001, value: state, name: 'keyLockState' });
+    }
+    
+    if (w8004Attrs.length === 0) {
+      // No W8004 attributes found, fall through to generic control
+    } else if (w8004Attrs.length === 1) {
+      // Single register write - use 06 instruction
+      const attr = w8004Attrs[0];
+      const hiReg = (attr.register >> 8) & 0xFF;
+      const loReg = attr.register & 0xFF;
+      const hiVal = (attr.value >> 8) & 0xFF;
+      const loVal = attr.value & 0xFF;
+      bytes = [0x06, 0x06, hiReg, loReg, hiVal, loVal];
       return { bytes, fPort: 2, errors, warnings };
+    } else {
+      // Multiple registers - check if consecutive for 0x07 instruction
+      w8004Attrs.sort((a, b) => a.register - b.register);
+      
+      // Check if registers are consecutive
+      let isConsecutive = true;
+      for (let i = 1; i < w8004Attrs.length; i++) {
+        if (w8004Attrs[i].register !== w8004Attrs[i-1].register + 1) {
+          isConsecutive = false;
+          break;
+        }
+      }
+      
+      if (isConsecutive) {
+        // Build Modbus function code 0x10 (write multiple registers) frame
+        const slaveAddr = 0x01; // Default slave address
+        const startReg = w8004Attrs[0].register;
+        const regCount = w8004Attrs.length;
+        const byteCount = regCount * 2;
+        
+        // Build frame without CRC
+        const frame = [
+          slaveAddr,
+          0x10,  // Function code: Write multiple registers
+          (startReg >> 8) & 0xFF,
+          startReg & 0xFF,
+          (regCount >> 8) & 0xFF,
+          regCount & 0xFF,
+          byteCount
+        ];
+        
+        // Add register values
+        for (const attr of w8004Attrs) {
+          frame.push((attr.value >> 8) & 0xFF);
+          frame.push(attr.value & 0xFF);
+        }
+        
+        // Calculate and append CRC
+        const crc = modbusCRC16(frame);
+        frame.push(crc[0]);
+        frame.push(crc[1]);
+        
+        // Prepend 0x07 instruction
+        bytes = [0x07].concat(frame);
+        return { bytes, fPort: 2, errors, warnings };
+      } else {
+        // Non-consecutive registers - use first one with 06 instruction
+        const attr = w8004Attrs[0];
+        const hiReg = (attr.register >> 8) & 0xFF;
+        const loReg = attr.register & 0xFF;
+        const hiVal = (attr.value >> 8) & 0xFF;
+        const loVal = attr.value & 0xFF;
+        bytes = [0x06, 0x06, hiReg, loReg, hiVal, loVal];
+        warnings.push("Multiple non-consecutive W8004 attributes detected, only setting " + attr.name);
+        warnings.push("For multiple attributes, use consecutive registers or modbusRaw");
+        return { bytes, fPort: 2, errors, warnings };
+      }
     }
   }
 
@@ -808,6 +998,8 @@ function encodeDownlink(input) {
   warnings.push("No valid downlink command specified");
   warnings.push("Available options:");
   warnings.push("  - AT commands: {at: 'AT+REBOOT'} or {at: ['AT+HBTPKTTIMS=3600', 'AT+REBOOT']}");
+  warnings.push("  - Serial passthrough: {serialPassthrough: [0x01, 0x10, ...]} or {serialPassthrough: '01100004...'}");
+  warnings.push("  - Modbus raw: {modbusRaw: [0x01, 0x10, ...]} or {modbusHex: '01 10 00 04 ...'}");
   warnings.push("  - Device control: {powerState: 0/1}, {lockState: 0/1}, {setTemperature: 25.5}, etc.");
   warnings.push("  - Raw bytes: {rawBytes: [0x01, 0x02, 0x03]}");
   

@@ -262,6 +262,44 @@ testDownlink('Generic Power Off', {
   }
 }, 2, 2);
 
+// Test 15: Serial Passthrough (byte array)
+testDownlink('Serial Passthrough with Byte Array', {
+  data: {
+    serialPassthrough: [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, 0x09, 0xC4, 0x00, 0x01, 0x00, 0x01, 0xC6, 0x1D]
+  }
+}, 220, 16);
+
+// Test 16: Serial Passthrough (hex string)
+testDownlink('Serial Passthrough with Hex String', {
+  data: {
+    serialPassthrough: '01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D'
+  }
+}, 220, 16);
+
+// Test 17: Modbus Raw (byte array)
+testDownlink('Modbus Raw with Byte Array', {
+  data: {
+    modbusRaw: [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, 0x09, 0xC4, 0x00, 0x01, 0x00, 0x01, 0xC6, 0x1D]
+  }
+}, 2, 16);
+
+// Test 18: Modbus Hex
+testDownlink('Modbus Hex String', {
+  data: {
+    modbusHex: '0110000400030609C4000100 01C61D'
+  }
+}, 2, 16);
+
+// Test 19: W8004 Multi-Attribute (consecutive registers)
+testDownlink('W8004 Multi-Attribute Control', {
+  data: {
+    model: 'W8004',
+    setTemperature: 25.0,
+    workMode: 1,
+    fanSpeed: 1
+  }
+}, 2, 10);
+
 // ============================================================
 // SUMMARY
 // ============================================================

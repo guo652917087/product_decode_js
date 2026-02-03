@@ -63,6 +63,27 @@ Payload: `FF 41 54 2B ... 0D 0A 41 54 2B ... 0D 0A`
 
 **Important**: Always place `AT+REBOOT` last when setting parameters that require reboot to take effect.
 
+#### Serial Passthrough (fPort 220)
+
+Format: `0xFE` + passthrough bytes
+
+**Example** (Modbus RTU direct):
+```json
+{
+  "serialPassthrough": [0x01, 0x10, 0x00, 0x04, ...]
+}
+// or
+{
+  "serialPassthrough": "01 10 00 04 00 03 06 09 C4 ..."
+}
+```
+Payload: `FE 01 10 00 04 ...`
+
+**Use Cases**:
+- Direct serial/Modbus RTU communication
+- Custom protocols
+- Debugging
+
 #### Control Commands (fPort 2)
 
 Use numeric values for all control fields to ensure compatibility with Modbus TCP and BACnet BIP:
@@ -78,6 +99,26 @@ Use numeric values for all control fields to ensure compatibility with Modbus TC
 }
 ```
 
+**Modbus Raw Frame (07 Instruction):**
+
+Format: `0x07` + complete Modbus frame (with CRC)
+
+```json
+{
+  "modbusRaw": [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, ...]
+}
+// or
+{
+  "modbusHex": "01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D"
+}
+```
+Payload: `07 01 10 00 04 ...`
+
+**Use Cases**:
+- Multiple register writes in one command
+- Pre-calculated Modbus frames
+- Direct control from SCADA systems
+
 **Device-Specific Examples:**
 
 DS-501 Smart Socket:
@@ -92,7 +133,7 @@ DS-501 Smart Socket:
 }
 ```
 
-W8004 Thermostat:
+W8004 Thermostat (Single Attribute):
 ```json
 {
   "setTemperature": 25.5
@@ -102,6 +143,17 @@ W8004 Thermostat:
   "workMode": 1  // cooling mode
 }
 ```
+
+W8004 Thermostat (Multiple Attributes - uses 07 instruction automatically):
+```json
+{
+  "model": "W8004",
+  "setTemperature": 25.0,
+  "workMode": 1,
+  "fanSpeed": 2
+}
+```
+*Note: Codec automatically detects consecutive registers and uses Modbus function 0x10 for efficiency*
 
 ## Modbus TCP Integration
 

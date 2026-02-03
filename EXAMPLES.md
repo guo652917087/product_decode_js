@@ -354,31 +354,165 @@ const hvacStatus = {
 
 ---
 
+### Example 8: W8004 Multi-Attribute Control (07 Instruction)
+
+**Command** (Set multiple attributes at once):
+```json
+{
+  "data": {
+    "model": "W8004",
+    "setTemperature": 25.0,
+    "workMode": 1,
+    "fanSpeed": 1
+  }
+}
+```
+
+**How it works**:
+- Codec detects multiple consecutive W8004 attributes
+- Automatically builds Modbus function code 0x10 (write multiple registers)
+- Uses 07 instruction format for efficiency
+
+**Encoded Result**:
+```json
+{
+  "bytes": [7, 1, 16, 0, 4, 0, 3, 6, 9, 196, 0, 1, 0, 1, 198, 29],
+  "fPort": 2
+}
+```
+
+**Hex Breakdown**:
+```
+07                          - 07 instruction (Modbus passthrough)
+01                          - Modbus slave address
+10                          - Function code 0x10 (write multiple)
+00 04                       - Starting register 0x0004
+00 03                       - Register count (3)
+06                          - Byte count (6)
+09 C4                       - setTemperature value (2500 = 25.0°C)
+00 01                       - workMode value (1 = cooling)
+00 01                       - fanSpeed value (1 = low)
+C6 1D                       - CRC16
+```
+
+---
+
+### Example 9: Serial Passthrough (FE Instruction)
+
+**Command** (Direct Modbus RTU passthrough):
+```json
+{
+  "data": {
+    "serialPassthrough": [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, 
+                          0x09, 0xC4, 0x00, 0x01, 0x00, 0x01, 0xC6, 0x1D]
+  }
+}
+```
+
+**Or using hex string**:
+```json
+{
+  "data": {
+    "serialPassthrough": "01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D"
+  }
+}
+```
+
+**Encoded Result**:
+```json
+{
+  "bytes": [254, 1, 16, 0, 4, 0, 3, 6, 9, 196, 0, 1, 0, 1, 198, 29],
+  "fPort": 220
+}
+```
+
+**Hex**: `FE 01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D`
+
+**Use Cases**:
+- Direct serial communication
+- Modbus RTU commands
+- Custom protocols
+- Debugging
+
+---
+
+### Example 10: Modbus Raw Frame (07 Instruction)
+
+**Command** (Provide complete Modbus frame):
+```json
+{
+  "data": {
+    "modbusRaw": [0x01, 0x10, 0x00, 0x04, 0x00, 0x03, 0x06, 
+                  0x09, 0xC4, 0x00, 0x01, 0x00, 0x01, 0xC6, 0x1D]
+  }
+}
+```
+
+**Or using hex string**:
+```json
+{
+  "data": {
+    "modbusHex": "0110000400030609C4000100 01C61D"
+  }
+}
+```
+
+**Encoded Result**:
+```json
+{
+  "bytes": [7, 1, 16, 0, 4, 0, 3, 6, 9, 196, 0, 1, 0, 1, 198, 29],
+  "fPort": 2
+}
+```
+
+**Hex**: `07 01 10 00 04 00 03 06 09 C4 00 01 00 01 C6 1D`
+
+**Use Cases**:
+- Pre-calculated Modbus frames
+- Complex register operations
+- Custom Modbus commands
+- Direct control from SCADA systems
+
+---
+
 ## Device-Specific Examples
 
 ### W8004 Thermostat Complete Control
 
 **Scenario**: Set up thermostat for cooling mode at 24°C with medium fan speed
 
-**Step 1**: Set temperature
+**Method 1: Individual Commands** (Sequential)
 ```json
+// Step 1: Set temperature
 {"data": {"setTemperature": 24.0}}
-```
 
-**Step 2**: Set cooling mode
-```json
+// Step 2: Set cooling mode
 {"data": {"workMode": 1}}
-```
 
-**Step 3**: Set fan to medium
-```json
+// Step 3: Set fan to medium
 {"data": {"fanSpeed": 2}}
-```
 
-**Step 4**: Power on (if needed)
-```json
+// Step 4: Power on (if needed)
 {"data": {"powerState": 1}}
 ```
+
+**Method 2: Multi-Attribute Command** (Efficient, single downlink)
+```json
+{
+  "data": {
+    "model": "W8004",
+    "setTemperature": 24.0,
+    "workMode": 1,
+    "fanSpeed": 2
+  }
+}
+```
+
+**Benefits of Method 2**:
+- Single downlink message (saves airtime)
+- Atomic operation (all settings applied together)
+- Automatically uses 07 instruction with Modbus function 0x10
+- More efficient for battery-powered gateways
 
 ---
 
