@@ -39,6 +39,10 @@ This single codec supports **all device types** with:
 
 - [Product Manuals](Product%20Manual/) - Communication protocols and specifications (Chinese)
 - [ChirpStack Codec Guide](README_CHIRPSTACK_CODEC.md) - Complete codec documentation
+- [Quick Start Guide](QUICK_START.md) - 5-minute setup
+- [Usage Examples](EXAMPLES.md) - 15+ practical examples
+- [Advanced Downlink](ADVANCED_DOWNLINK.md) - Multi-attribute control, Modbus 06/07, serial passthrough
+- [System Architecture](ARCHITECTURE.md) - Data flow and integration diagrams
 - [Configuration File](openwrt/iot_hub) - Device attributes and Modbus/BACnet mappings
 
 ## 🔧 Usage
