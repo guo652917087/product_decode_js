@@ -516,10 +516,11 @@ function parseModbusBlock(modBytes, out) {
  * Parse EF5600-DN1 electrical fire data (Type 0xC6)
  * @param {number[]} elecBytes - Electrical data bytes
  * @param {object} out - Output object to populate
+ * @param {string[]} warnings - Warnings array to populate
  */
-function parseElectricalFireData(elecBytes, out) {
+function parseElectricalFireData(elecBytes, out, warnings) {
     if (!elecBytes || elecBytes.length < 103) {
-        console.warn("Electrical fire data too short");
+        warnings.push("Electrical fire data too short");
         return;
     }
 
@@ -528,7 +529,7 @@ function parseElectricalFireData(elecBytes, out) {
     // Check length byte (should be 0x66 = 102 bytes of data)
     const dataLength = elecBytes[idx++];
     if (dataLength !== 0x66) {
-        console.warn(`Unexpected electrical data length: 0x${dataLength.toString(16)}`);
+        warnings.push(`Unexpected electrical data length: 0x${dataLength.toString(16)}`);
         return;
     }
 
@@ -676,10 +677,11 @@ function parseElectricalAlarm(alarmBits) {
  *     Byte 9: Number of beacons scanned
  * @param {number[]} beaconBytes - Beacon data bytes
  * @param {object} out - Output object to populate
+ * @param {string[]} warnings - Warnings array to populate
  */
-function parseBeaconData(beaconBytes, out) {
+function parseBeaconData(beaconBytes, out, warnings) {
     if (!beaconBytes || beaconBytes.length < 6) {
-        console.warn("Beacon data too short");
+        warnings.push("Beacon data too short");
         return;
     }
 
@@ -688,7 +690,7 @@ function parseBeaconData(beaconBytes, out) {
 
     // Check if length byte matches actual data
     if (beaconBytes.length < dataLength + 1) {
-        console.warn("Beacon data length mismatch");
+        warnings.push("Beacon data length mismatch");
         return;
     }
 
@@ -745,10 +747,11 @@ function parseBeaconData(beaconBytes, out) {
  * @param {number[]} beaconBytes - Simple beacon data bytes
  * @param {object} out - Output object to populate
  * @param {number} beaconIndex - Index of this beacon (0, 1, 2)
+ * @param {string[]} warnings - Warnings array to populate
  */
-function parseSimpleBeaconData(beaconBytes, out, beaconIndex) {
+function parseSimpleBeaconData(beaconBytes, out, beaconIndex, warnings) {
     if (!beaconBytes || beaconBytes.length < 8) {
-        console.warn(`Beacon ${beaconIndex} data too short`);
+        warnings.push(`Beacon ${beaconIndex} data too short`);
         return;
     }
 
@@ -756,7 +759,7 @@ function parseSimpleBeaconData(beaconBytes, out, beaconIndex) {
     const dataLength = beaconBytes[idx++];
 
     if (dataLength !== 0x07) {
-        console.warn(`Unexpected beacon data length: 0x${dataLength.toString(16)}`);
+        warnings.push(`Unexpected beacon data length: 0x${dataLength.toString(16)}`);
         return;
     }
 
@@ -799,10 +802,11 @@ function parseSimpleBeaconData(beaconBytes, out, beaconIndex) {
  *   Bytes 28-30: Z-axis displacement (μm ÷10, unsigned 24-bit, big-endian)
  * @param {number[]} vibBytes - Vibration data bytes
  * @param {object} out - Output object to populate
+ * @param {string[]} warnings - Warnings array to populate
  */
-function parseVibrationData(vibBytes, out) {
+function parseVibrationData(vibBytes, out, warnings) {
     if (!vibBytes || vibBytes.length < 31) {
-        console.warn("Vibration data too short");
+        warnings.push("Vibration data too short");
         return;
     }
 
@@ -810,7 +814,7 @@ function parseVibrationData(vibBytes, out) {
     const dataLength = vibBytes[idx++];
 
     if (dataLength !== 0x1E) {
-        console.warn(`Unexpected vibration data length: 0x${dataLength.toString(16)}`);
+        warnings.push(`Unexpected vibration data length: 0x${dataLength.toString(16)}`);
         return;
     }
 
@@ -1654,7 +1658,7 @@ function decodeUplink(input) {
             }
             const simpleBeaconEndIdx = Math.min(idx + simpleBeaconLen, bytes.length);
             const simpleBeaconBytes = bytes.slice(idx, simpleBeaconEndIdx);
-            parseSimpleBeaconData(simpleBeaconBytes, data, beaconIndex);
+            parseSimpleBeaconData(simpleBeaconBytes, data, beaconIndex, warnings);
             idx = simpleBeaconEndIdx;
             break;
 
@@ -1671,7 +1675,7 @@ function decodeUplink(input) {
             }
             const vibEndIdx = Math.min(idx + vibDataLen, bytes.length);
             const vibBytes = bytes.slice(idx, vibEndIdx);
-            parseVibrationData(vibBytes, data);
+            parseVibrationData(vibBytes, data, warnings);
             idx = vibEndIdx;
             break;
 
@@ -1709,7 +1713,7 @@ function decodeUplink(input) {
             }
             const elecEndIdx = Math.min(idx + elecDataLen, bytes.length);
             const elecBytes = bytes.slice(idx, elecEndIdx);
-            parseElectricalFireData(elecBytes, data);
+            parseElectricalFireData(elecBytes, data, warnings);
             idx = elecEndIdx;
             break;
 
@@ -1904,7 +1908,7 @@ function decodeUplink(input) {
             }
             const beaconEndIdx = Math.min(idx + beaconDataLen, bytes.length);
             const beaconBytes = bytes.slice(idx, beaconEndIdx);
-            parseBeaconData(beaconBytes, data);
+            parseBeaconData(beaconBytes, data, warnings);
             idx = beaconEndIdx;
             break;
 
