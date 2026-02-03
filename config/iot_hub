@@ -2141,7 +2141,7 @@ config attribute 'temperatureAlarmStatus'
     # BACnet: Analog Input (AI)
     option bacnet_enable '1'
     option bacnet_object_type 'AI'
-    option bacnet_instance_offset '100'
+    option bacnet_instance_offset '72'
     option bacnet_unit '95'
 
 # Battery low alarm
@@ -2161,7 +2161,7 @@ config attribute 'batteryLowAlarm'
     # BACnet: Binary Input (BI)
     option bacnet_enable '1'
     option bacnet_object_type 'BI'
-    option bacnet_instance_offset '101'
+    option bacnet_instance_offset '73'
     option bacnet_unit '95'
 
 # Acceleration alarm
@@ -2181,7 +2181,7 @@ config attribute 'accelerationAlarm'
     # BACnet: Binary Input (BI)
     option bacnet_enable '1'
     option bacnet_object_type 'BI'
-    option bacnet_instance_offset '102'
+    option bacnet_instance_offset '74'
     option bacnet_unit '95'
 
 # Tilt alarm
@@ -2201,7 +2201,7 @@ config attribute 'tiltAlarm'
     # BACnet: Binary Input (BI)
     option bacnet_enable '1'
     option bacnet_object_type 'BI'
-    option bacnet_instance_offset '103'
+    option bacnet_instance_offset '75'
     option bacnet_unit '95'
 
 # Sensor abnormal status
@@ -2221,7 +2221,7 @@ config attribute 'sensorAbnormal'
     # BACnet: Binary Input (BI)
     option bacnet_enable '1'
     option bacnet_object_type 'BI'
-    option bacnet_instance_offset '104'
+    option bacnet_instance_offset '76'
     option bacnet_unit '95'
 
 # Liquid level status
@@ -2243,7 +2243,7 @@ config attribute 'liquidLevelStatus'
     # BACnet: Analog Input (AI)
     option bacnet_enable '1'
     option bacnet_object_type 'AI'
-    option bacnet_instance_offset '105'
+    option bacnet_instance_offset '77'
     option bacnet_unit '95'
 
 # Vibration alarm status
@@ -2265,7 +2265,7 @@ config attribute 'vibrationAlarmStatus'
     # BACnet: Analog Input (AI)
     option bacnet_enable '1'
     option bacnet_object_type 'AI'
-    option bacnet_instance_offset '106'
+    option bacnet_instance_offset '78'
     option bacnet_unit '95'
 
 # Safety alarm active (composite)
@@ -2285,6 +2285,6 @@ config attribute 'safetyAlarmActive'
     # BACnet: Binary Input (BI)
     option bacnet_enable '1'
     option bacnet_object_type 'BI'
-    option bacnet_instance_offset '107'
+    option bacnet_instance_offset '79'
     option bacnet_unit '95'
     
