@@ -21,7 +21,7 @@
  * DEVICE SUPPORT LIST WITH PROTOCOL NOTES:
  * =========================================
  *
- * AN204B: Water Leakage Sensor
+ * AN-204: Water Leakage Sensor
  *   - Type 0x85: Water leakage status (0x00=no water, 0x01=water detected)
  *   - Type 0x73: Water leakage duration in minutes (2 bytes, big-endian)
  *   - Type 0x21: Water leakage event (0x00=no water, 0x01=water detected)
@@ -32,19 +32,19 @@
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
  *   - Type 0x7D: Battery voltage state (0x00=normal, 0x01=low)
  *
- * AN303: Temperature & Humidity Sensor
+ * AN-303: Temperature & Humidity Sensor
  *   - Type 0x10: Temperature (2 bytes signed, big-endian, ×100, unit: °C)
  *   - Type 0x12: Humidity (2 bytes unsigned, big-endian, ×10, unit: %RH)
  *   - Type 0x11: Temperature event (0x00=normal, 0x01=abnormal, 0x02=high, 0x03=low)
  *   - Type 0x13: Humidity event (0x00=normal, 0x01=abnormal, 0x02=high, 0x03=low)
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
  *
- * AN304C: Infrared Detector
+ * AN-304: Infrared Detector
  *   - Type 0x17: Infrared event (0x00=normal, 0x01=alarm)
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
  *   - Type 0x7D: Battery voltage state (0x00=normal, 0x01=low)
  *
- * AN305A: Door Contact Sensor
+ * AN-305: Door Contact Sensor
  *   - Type 0x76: Door state (0x00=closed, 0x01=open)
  *   - Type 0x18: Door state (alternate) (0x00=closed, 0x01=open)
  *   - Type 0x24: Door event (0x00=closed event, 0x01=open event)
@@ -86,9 +86,6 @@
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
  *   - Type 0x82: Sensor self-check event (0x00=normal, 0x01=self-check occurred)
  *
- * NEW DEVICES ADDED:
- * ==================
- *
  * SC001: Safety Helmet with Multiple Sensors
  *   - Type 0x01: Device model identifier (0x60 = SC001)
  *   - Type 0x93: Battery percentage (1 byte, 0-100%)
@@ -118,8 +115,8 @@
  *   - Type 0x11: Temperature event (0=normal, 1=abnormal, 2=too high, 3=too low)
  *   - Type 0x14: SOS event (0=no danger, 1=danger)
  *
- * AN122B: Beacon Tracker with GPS
- *   - Type 0x01: Device model identifier (0x57 = AN_122B)
+ * AN-122: Beacon Tracker with GPS
+ *   - Type 0x01: Device model identifier (0x57 = AN-122)
  *   - Type 0x93: Battery percentage (1 byte, 0-100%)
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
  *   - Type 0x6D: Packet type (0x00=heartbeat, 0x01=data report)
@@ -133,8 +130,8 @@
  *   - Type 0xA8: Acceleration alarm event (0=normal, 1=acceleration alarm)
  *   - Type 0xC2: Tilt alarm event (0=normal, 1=tilt alarm)
  *
- * AN113: Tilt/Angle Sensor
- *   - Type 0x01: Device model identifier (0x3c = AN113)
+ * AN-113: Tilt/Angle Sensor
+ *   - Type 0x01: Device model identifier (0x3c = AN-113)
  *   - Type 0x04: Battery voltage (2 bytes unsigned, big-endian, unit: mV)
  *   - Type 0x7D: Battery voltage state (0x00=normal, 0x01=low voltage)
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
@@ -146,7 +143,7 @@
  *   - Type 0xC2: Tilt alarm event (0x00=normal, 0x01=alarm)
  *
  * EX205: Radar Liquid Level Meter
- *   - Type 0x01: Device model identifier (0x55 = EX_205 normal, 0x54 = EX_205 abnormal)
+ *   - Type 0x01: Device model identifier (0x55 = EX205 normal, 0x54 = EX205 abnormal)
  *   - Type 0x04: Battery voltage (2 bytes unsigned, big-endian, unit: mV)
  *   - Type 0x7D: Battery voltage state (0x00=normal, 0x01=low voltage)
  *   - Type 0x6D: Packet type (0x00=heartbeat, 0x01=data report)
@@ -158,18 +155,18 @@
  *   - Type 0x1B: Sensor status (0x00=normal, 0x01=abnormal) - only in abnormal packet
  *
  * AN-307: Sound & Light Alarm
- *   - Type 0x01: Device model identifier (0x2A = AN_307)
+ *   - Type 0x01: Device model identifier (0x2A = AN-307)
  *   - Type 0x3A: Alarm status (0x00=normal, 0x01=alarm)
  *
- * DS103: 3-Channel Switch Controller
- *   - Type 0x01: Device model identifier (0x5C = DS103)
+ * DS-103: 3-Channel Switch Controller
+ *   - Type 0x01: Device model identifier (0x5C = DS-103)
  *   - Type 0x79: Timestamp (4 bytes unsigned, big-endian, Unix time, 0=no time)
  *   - Type 0x96: Switch lock state (0=unlocked, 1=locked)
  *   - Type 0x22: Switch state (0=disconnected, 1=connected) - repeated for 3 switches
  *   - Type 0xB0: Switch timer status (4 bytes bitfield, big-endian)
  *
- * AN308: Light Illuminance Sensor
- *   - Type 0x01: Device model identifier (0x45 = AN_308)
+ * AN-308: Light Illuminance Sensor
+ *   - Type 0x01: Device model identifier (0x45 = AN-308)
  *   - Type 0x04: Battery voltage (2 bytes unsigned, big-endian, unit: mV)
  *   - Type 0x7D: Battery voltage state (0x00=normal, 0x01=low voltage)
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
@@ -177,8 +174,8 @@
  *   - Type 0x05: Battery low voltage alarm event (0x00=normal, 0x01=low voltage)
  *   - Type 0x03: Tamper event (0x00=not tampered, 0x01=tampered)
  *
- * AN306: Radar Human Presence Sensor
- *   - Type 0x01: Device model identifier (0x44 = AN_306)
+ * AN-306: Radar Human Presence Sensor
+ *   - Type 0x01: Device model identifier (0x44 = AN-306)
  *   - Type 0x6D: Packet type (0x00=heartbeat, 0x01=data report)
  *   - Type 0x77: Tamper state (0x00=not tampered, 0x01=tampered)
  *   - Type 0xBD: Radar human presence status (0x00=no person, 0x01=person present)
@@ -186,7 +183,7 @@
  *   - Type 0xBE: Radar human presence event (0x00=no person event, 0x01=person event)
  *
  * EX301: Vibration Sensor
- *   - Type 0x01: Device model identifier (0x56 = EX_301)
+ *   - Type 0x01: Device model identifier (0x56 = EX301)
  *   - Type 0x04: Battery voltage (2 bytes unsigned, big-endian, unit: mV)
  *   - Type 0x7D: Battery voltage state (0x00=normal, 0x01=low voltage)
  *   - Type 0x6D: Packet type (0x00=heartbeat, 0x01=data report)
@@ -249,14 +246,14 @@ const MODEL_MAP = {
     // AN Series
     0x01: "AN-301", // Emergency button
     0x03: "AN-303", // Temperature & humidity
-    0x04: "AN-304C", // Infrared detector
-    0x11: "AN-204B", // Water leakage sensor
-    0x24: "AN-305A", // Door contact sensor
-    0x25: "AN-305S", // Door sensor variant
-    0x3c: "AN113", // Tilt/Angle Sensor
-    0x44: "AN306", // Radar Human Presence Sensor
-    0x45: "AN308", // Light Illuminance Sensor
-    0x57: "AN122B", // Beacon Tracker with GPS
+    0x04: "AN-304", // Infrared detector
+    0x11: "AN-204", // Water leakage sensor
+    0x24: "AN-305", // Door contact sensor
+    0x25: "AN-305", // Door sensor variant
+    0x3c: "AN-113", // Tilt/Angle Sensor
+    0x44: "AN-306", // Radar Human Presence Sensor
+    0x45: "AN-308", // Light Illuminance Sensor
+    0x57: "AN-122", // Beacon Tracker with GPS
     0x2a: "AN-307", // Sound & Light Alarm
     0x51: "JTY-AN-503A", // Smoke detector
 
@@ -265,7 +262,7 @@ const MODEL_MAP = {
 
     // DS Series (Smart devices)
     0x48: "DS-501", // Smart socket panel
-    0x5c: "DS103", // 3-Channel Switch Controller
+    0x5c: "DS-103", // 3-Channel Switch Controller
 
     // W Series (Thermostats)
     0x46: "W8004", // Thermostat controller
@@ -738,7 +735,7 @@ function parseBeaconData(beaconBytes, out) {
 }
 
 /**
- * Parse simple beacon data for AN122B device
+ * Parse simple beacon data for AN-122 device
  * Simple beacon data structure (8 bytes fixed):
  *   Byte 0: Length (fixed 0x07)
  *   Bytes 1-4: Beacon ID (32-bit unsigned, big-endian)
@@ -958,7 +955,7 @@ function decodeUplink(input) {
             idx += 4;
             break;
 
-            // ========== TAMPER DETECTION (AN-301, AN303, AN304C, AN305A, AN113, AN122B, AN306, AN308, JTY-AN-503A) ==========
+            // ========== TAMPER DETECTION (AN-301, AN-303, AN-304, AN-305, AN-113, AN-122, AN-306, AN-308, JTY-AN-503A) ==========
             // Type 0x03: Tamper event (1 byte)
         case 0x03:
             if (idx >= bytes.length) {
@@ -969,7 +966,7 @@ function decodeUplink(input) {
             break;
 
             // ========== BATTERY INFORMATION (Most battery-powered devices) ==========
-            // Type 0x04: Battery voltage in millivolts (2 bytes, big-endian) - AN113, AN308, EX205, EX301, EF5600-DN1, CU606
+            // Type 0x04: Battery voltage in millivolts (2 bytes, big-endian) - AN-113, AN-308, EX205, EX301, EF5600-DN1, CU606
         case 0x04:
             if (idx + 2 > bytes.length) {
                 warnings.push("Truncated battery voltage");
@@ -980,7 +977,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // Type 0x05: Battery voltage event (1 byte) - AN204B, AN-301, AN303, AN304C, AN305A, AN113, AN308, EX205, EX301, JTY-AN-503A
+            // Type 0x05: Battery voltage event (1 byte) - AN-204, AN-301, AN-303, AN-304, AN-305, AN-113, AN-308, EX205, EX301, JTY-AN-503A
         case 0x05:
             if (idx >= bytes.length) {
                 warnings.push("Truncated battery event");
@@ -1073,7 +1070,7 @@ function decodeUplink(input) {
             }
             break;
 
-            // ========== TEMPERATURE & HUMIDITY (AN303, CU606, JTY-AN-503A, EF5600-DN1, SC001, EX301) ==========
+            // ========== TEMPERATURE & HUMIDITY (AN-303, CU606, JTY-AN-503A, EF5600-DN1, SC001, EX301) ==========
             // Type 0x10: Temperature in Celsius (2 bytes signed, big-endian, ×100)
         case 0x10:
             if (idx + 2 > bytes.length) {
@@ -1085,7 +1082,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // Type 0x11: Temperature event (1 byte) - AN303, SC001
+            // Type 0x11: Temperature event (1 byte) - AN-303, SC001
         case 0x11:
             if (idx >= bytes.length) {
                 warnings.push("Truncated temperature event");
@@ -1107,7 +1104,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // Type 0x13: Humidity event (1 byte) - AN303
+            // Type 0x13: Humidity event (1 byte) - AN-303
         case 0x13:
             if (idx >= bytes.length) {
                 warnings.push("Truncated humidity event");
@@ -1138,7 +1135,7 @@ function decodeUplink(input) {
             break;
 
             // ========== SECURITY & SAFETY DEVICES ==========
-            // Type 0x17: Infrared event (1 byte) - AN304C
+            // Type 0x17: Infrared event (1 byte) - AN-304
         case 0x17:
             if (idx >= bytes.length) {
                 warnings.push("Truncated infrared event");
@@ -1147,7 +1144,7 @@ function decodeUplink(input) {
             data.infraredEvent = bytes[idx++];
             break;
 
-            // Type 0x18: Door state (1 byte) - AN305A
+            // Type 0x18: Door state (1 byte) - AN-305
         case 0x18:
             if (idx >= bytes.length) {
                 warnings.push("Truncated door state");
@@ -1166,7 +1163,7 @@ function decodeUplink(input) {
             data.sensorAbnormal = data.sensorStatus === 0x01 ? 1 : 0;
             break;
 
-            // Type 0x21: Water leakage event (1 byte) - AN204B
+            // Type 0x21: Water leakage event (1 byte) - AN-204
         case 0x21:
             if (idx >= bytes.length) {
                 warnings.push("Truncated water event");
@@ -1175,14 +1172,14 @@ function decodeUplink(input) {
             data.waterEvent = bytes[idx++] === 0x01 ? 1 : 0;
             break;
 
-            // Type 0x22: Relay/Switch state (1 byte) - DS-501, DS103, EF5600-DN1
+            // Type 0x22: Relay/Switch state (1 byte) - DS-501, DS-103, EF5600-DN1
         case 0x22:
             if (idx >= bytes.length) {
                 warnings.push("Truncated relay/switch state");
                 break;
             }
-            // For DS103, store in array for multiple switches
-            if (data.model === "DS103") {
+            // For DS-103, store in array for multiple switches
+            if (data.model === "DS-103") {
                 if (!data.switchStates)
                     data.switchStates = [];
                 data.switchStates.push(bytes[idx++]);
@@ -1192,7 +1189,7 @@ function decodeUplink(input) {
             }
             break;
 
-            // Type 0x24: Door event (1 byte) - AN305A
+            // Type 0x24: Door event (1 byte) - AN-305
         case 0x24:
             if (idx >= bytes.length) {
                 warnings.push("Truncated door event");
@@ -1210,7 +1207,7 @@ function decodeUplink(input) {
             data.smokeEvent = bytes[idx++];
             break;
 
-            // ========== POSITIONING & LOCATION (AN122B, SC001) ==========
+            // ========== POSITIONING & LOCATION (AN-122, SC001) ==========
             // Type 0x3E: Latitude (4 bytes signed, big-endian, ÷10000000)
         case 0x3E:
             if (idx + 4 > bytes.length) {
@@ -1253,7 +1250,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // Type 0x48: Illuminance (4 bytes unsigned, big-endian, unit: Lux) - AN308
+            // Type 0x48: Illuminance (4 bytes unsigned, big-endian, unit: Lux) - AN-308
         case 0x48:
             if (idx + 4 > bytes.length) {
                 warnings.push("Truncated illuminance");
@@ -1284,7 +1281,7 @@ function decodeUplink(input) {
             idx += 4;
             break;
 
-            // ========== TILT/ANGLE SENSOR (AN113, AN122B) ==========
+            // ========== TILT/ANGLE SENSOR (AN-113, AN-122) ==========
             // Type 0x6B: Tilt angle (2 bytes, degrees)
         case 0x6B:
             if (idx + 2 > bytes.length) {
@@ -1306,7 +1303,7 @@ function decodeUplink(input) {
             data.isHeartbeat = data.packetType === 0x00 ? 1 : 0;
             break;
 
-            // ========== WATER LEAKAGE SENSOR (AN204B) ==========
+            // ========== WATER LEAKAGE SENSOR (AN-204) ==========
             // Type 0x73: Water leakage duration in minutes (2 bytes, big-endian)
         case 0x73:
             if (idx + 2 > bytes.length) {
@@ -1317,7 +1314,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // ========== DOOR STATE (AN305A) ==========
+            // ========== DOOR STATE (AN-305) ==========
             // Type 0x76: Door state (alternate) (1 byte)
         case 0x76:
             if (idx >= bytes.length) {
@@ -1327,7 +1324,7 @@ function decodeUplink(input) {
             data.doorState = bytes[idx++];
             break;
 
-            // ========== TAMPER STATE (AN-301, AN303, AN304C, AN305A, AN113, AN122B, AN306, AN308, JTY-AN-503A) ==========
+            // ========== TAMPER STATE (AN-301, AN-303, AN-304, AN-305, AN-113, AN-122, AN-306, AN-308, JTY-AN-503A) ==========
             // Type 0x77: Tamper state (1 byte)
         case 0x77:
             if (idx >= bytes.length) {
@@ -1338,7 +1335,7 @@ function decodeUplink(input) {
             data.tamper = data.tamperStatus;
             break;
 
-            // ========== BATTERY VOLTAGE STATE (AN-301, AN303, AN304C, AN113, AN308, EX205, EX301, CU606, JTY-AN-503A) ==========
+            // ========== BATTERY VOLTAGE STATE (AN-301, AN-303, AN-304, AN-113, AN-308, EX205, EX301, CU606, JTY-AN-503A) ==========
             // Type 0x7D: Battery voltage state (1 byte)
         case 0x7D:
             if (idx >= bytes.length) {
@@ -1348,7 +1345,7 @@ function decodeUplink(input) {
             data.batteryVoltageState = bytes[idx++];
             break;
 
-            // ========== SMART SOCKET (DS-501, DS103) ==========
+            // ========== SMART SOCKET (DS-501, DS-103) ==========
             // Type 0x79: Local timestamp (4 bytes, big-endian, Unix time)
         case 0x79:
             if (idx + 4 > bytes.length) {
@@ -1363,7 +1360,7 @@ function decodeUplink(input) {
             idx += 4;
             break;
 
-            // Type 0x80: Timer status (4 bytes bitfield, big-endian) - DS-501, DS103
+            // Type 0x80: Timer status (4 bytes bitfield, big-endian) - DS-501, DS-103
         case 0x80:
             if (idx + 4 > bytes.length) {
                 warnings.push("Truncated timer status");
@@ -1406,7 +1403,7 @@ function decodeUplink(input) {
             data.smokeStatus = bytes[idx++];
             break;
 
-            // Type 0x85: Water leakage status (1 byte) - AN204B
+            // Type 0x85: Water leakage status (1 byte) - AN-204
         case 0x85:
             if (idx >= bytes.length) {
                 warnings.push("Truncated water status");
@@ -1427,7 +1424,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // ========== BATTERY PERCENTAGE (SC001, AN122B, CM100) ==========
+            // ========== BATTERY PERCENTAGE (SC001, AN-122, CM100) ==========
             // Type 0x93: Battery percentage (1 byte, 0-100%)
         case 0x93:
             if (idx >= bytes.length) {
@@ -1463,7 +1460,7 @@ function decodeUplink(input) {
             idx = endIdx;
             break;
 
-            // ========== SMART SOCKET LOCK STATE (DS-501, DS103) ==========
+            // ========== SMART SOCKET LOCK STATE (DS-501, DS-103) ==========
             // Type 0x96: Lock state (1 byte)
         case 0x96:
             if (idx >= bytes.length) {
@@ -1543,7 +1540,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // ========== ACCELERATION ALARM (AN113, AN122B) ==========
+            // ========== ACCELERATION ALARM (AN-113, AN-122) ==========
             // Type 0xA8: Acceleration alarm event (1 byte)
         case 0xA8:
             if (idx >= bytes.length) {
@@ -1574,7 +1571,7 @@ function decodeUplink(input) {
             idx += 2;
             break;
 
-            // ========== RADAR HUMAN PRESENCE SENSOR (AN306) ==========
+            // ========== RADAR HUMAN PRESENCE SENSOR (AN-306) ==========
             // Type 0xBD: Human presence status (1 byte)
         case 0xBD:
             if (idx >= bytes.length) {
@@ -1606,7 +1603,7 @@ function decodeUplink(input) {
             idx += 4;
             break;
 
-            // ========== SWITCH TIMER STATUS (DS103) ==========
+            // ========== SWITCH TIMER STATUS (DS-103) ==========
             // Type 0xB0: Switch timer status (4 bytes bitfield, big-endian)
         case 0xB0:
             if (idx + 4 > bytes.length) {
@@ -1615,7 +1612,7 @@ function decodeUplink(input) {
             }
             const switchTimerStatus = readUint32BE(bytes, idx);
             data.switchTimerStatus = switchTimerStatus;
-            // Parse DS103 specific timer flags
+            // Parse DS-103 specific timer flags
             data.timerCloseEnabled1 = (switchTimerStatus & 0x01) !== 0;
             data.timerOpenEnabled1 = (switchTimerStatus & 0x02) !== 0;
             data.timerCloseEnabled2 = (switchTimerStatus & 0x04) !== 0;
@@ -1627,7 +1624,7 @@ function decodeUplink(input) {
             idx += 4;
             break;
 
-            // ========== BATTERY LOW PERCENTAGE ALARM (SC001, AN122B, CM100) ==========
+            // ========== BATTERY LOW PERCENTAGE ALARM (SC001, AN-122, CM100) ==========
             // Type 0xB8: Battery low percentage alarm event (1 byte)
         case 0xB8:
             if (idx >= bytes.length) {
@@ -1637,7 +1634,7 @@ function decodeUplink(input) {
             data.batteryLowAlarm = bytes[idx++] === 0x01 ? 1 : 0;
             break;
 
-            // ========== BEACON DATA (SC001, AN122B, CM100) ==========
+            // ========== BEACON DATA (SC001, AN-122, CM100) ==========
             // Type 0xBA: Simple beacon data (8 bytes fixed)
         case 0xBA:
             if (idx >= bytes.length) {
@@ -1677,7 +1674,7 @@ function decodeUplink(input) {
             idx = vibEndIdx;
             break;
 
-            // ========== TILT ALARM (AN113, AN122B) ==========
+            // ========== TILT ALARM (AN-113, AN-122) ==========
             // Type 0xC2: Tilt alarm event (1 byte)
         case 0xC2:
             if (idx >= bytes.length) {
@@ -1687,7 +1684,7 @@ function decodeUplink(input) {
             data.tiltAlarm = bytes[idx++] === 0x01 ? 1 : 0;
             break;
 
-            // ========== POSITION ACCURACY (AN122B, SC001) ==========
+            // ========== POSITION ACCURACY (AN-122, SC001) ==========
             // Type 0xC3: Position accuracy factor (1 byte, ÷10, 255=invalid)
         case 0xC3:
             if (idx >= bytes.length) {
@@ -1936,8 +1933,8 @@ function decodeUplink(input) {
  * @param {object} data - Decoded data object
  */
 function postProcessData(data) {
-    // For DS103: Convert switch states array to named properties
-    if (data.model === "DS103" && data.switchStates && data.switchStates.length >= 3) {
+    // For DS-103: Convert switch states array to named properties
+    if (data.model === "DS-103" && data.switchStates && data.switchStates.length >= 3) {
         data.switch1State = data.switchStates[0];
         data.switch2State = data.switchStates[1];
         data.switch3State = data.switchStates[2];
@@ -2010,8 +2007,8 @@ function encodeDS501(data) {
 }
 
 /**
- * DS103 3-Channel Switch Controller downlink encoder
- * DS103 supports multiple control commands with format: 0x09 0x5C [command] [parameters]
+ * DS-103 3-Channel Switch Controller downlink encoder
+ * DS-103 supports multiple control commands with format: 0x09 0x5C [command] [parameters]
  * Commands:
  *   0x00: Disconnect switch (parameter: 0x01=left, 0x02=middle, 0x03=right, 0xFF=all)
  *   0x01: Connect switch (parameter: 0x01=left, 0x02=middle, 0x03=right, 0xFF=all)
@@ -2032,7 +2029,7 @@ function encodeDS501(data) {
  * @returns {number[]} Encoded bytes or empty array if no command
  */
 function encodeDS103(data) {
-    const header = [0x09, 0x5C]; // DS103 command header
+    const header = [0x09, 0x5C]; // DS-103 command header
 
     if (data.command) {
         const cmd = String(data.command).toLowerCase();
@@ -2311,14 +2308,14 @@ function encodeGenericSensor(data) {
 
 // Aliases for generic sensor devices
 const encodeAN301 = encodeGenericSensor;
-const encodeAN204B = encodeGenericSensor;
+const encodeAN204 = encodeGenericSensor;
 const encodeAN303 = encodeGenericSensor;
-const encodeAN304C = encodeGenericSensor;
-const encodeAN305A = encodeGenericSensor;
+const encodeAN304 = encodeGenericSensor;
+const encodeAN305 = encodeGenericSensor;
 const encodeCU606 = encodeGenericSensor;
 const encodeJTYAN503A = encodeGenericSensor;
 const encodeAN113 = encodeGenericSensor;
-const encodeAN122B = encodeGenericSensor;
+const encodeAN122 = encodeGenericSensor;
 const encodeAN306 = encodeGenericSensor;
 const encodeAN308 = encodeGenericSensor;
 const encodeEX205 = encodeGenericSensor;
@@ -2500,14 +2497,12 @@ function encodeDownlink(input) {
 
     switch (model) {
     case "DS-501":
-    case "DS501":
         bytes = encodeDS501(data);
         break;
-    case "DS103":
+    case "DS-103":
         bytes = encodeDS103(data);
         break;
     case "AN-307":
-    case "AN307":
         bytes = encodeAN307(data);
         break;
     case "W8004":
@@ -2516,21 +2511,17 @@ function encodeDownlink(input) {
     case "AN-301":
         bytes = encodeAN301(data);
         break;
-    case "AN-204B":
-    case "AN204B":
-        bytes = encodeAN204B(data);
+    case "AN-204":
+        bytes = encodeAN204(data);
         break;
     case "AN-303":
-    case "AN303":
         bytes = encodeAN303(data);
         break;
-    case "AN-304C":
-    case "AN304C":
-        bytes = encodeAN304C(data);
+    case "AN-304":
+        bytes = encodeAN304(data);
         break;
-    case "AN-305A":
-    case "AN305A":
-        bytes = encodeAN305A(data);
+    case "AN-305":
+        bytes = encodeAN305(data);
         break;
     case "CU606":
         bytes = encodeCU606(data);
@@ -2541,16 +2532,16 @@ function encodeDownlink(input) {
     case "JTY-AN-503A":
         bytes = encodeJTYAN503A(data);
         break;
-    case "AN113":
+    case "AN-113":
         bytes = encodeAN113(data);
         break;
-    case "AN122B":
-        bytes = encodeAN122B(data);
+    case "AN-122":
+        bytes = encodeAN122(data);
         break;
-    case "AN306":
+    case "AN-306":
         bytes = encodeAN306(data);
         break;
-    case "AN308":
+    case "AN-308":
         bytes = encodeAN308(data);
         break;
     case "EX205":
@@ -2588,12 +2579,6 @@ function encodeDownlink(input) {
 
     // No valid command found
     warnings.push("No valid downlink command specified");
-    warnings.push("Available options:");
-    warnings.push("  - AT commands: {at: 'AT+REBOOT'} or {at: ['AT+HBTPKTTIMS=3600', 'AT+REBOOT']}");
-    warnings.push("  - Serial passthrough: {serialPassthrough: [0x01, 0x10, ...]} or {serialPassthrough: '01100004...'}");
-    warnings.push("  - Modbus raw: {modbusRaw: [0x01, 0x10, ...]} or {modbusHex: '01 10 00 04 ...'}");
-    warnings.push("  - Device control: {powerState: 0/1}, {lockState: 0/1}, {setTemperature: 25.5}, etc.");
-    warnings.push("  - Raw bytes: {rawBytes: [0x01, 0x02, 0x03]}");
 
     return {
         bytes: [],
@@ -2602,9 +2587,4 @@ function encodeDownlink(input) {
         warnings
     };
 }
-
-/* ============================================================================
- * EXPORT FUNCTIONS FOR CHIRPSTACK
- * ============================================================================ */
-// Note: ChirpStack v4.16.0+ automatically detects decodeUplink and encodeDownlink functions
 
