@@ -935,6 +935,7 @@ function decodeUplink(input) {
             break;
 
         try {
+            switch (type) {
             // ========== DEVICE MODEL (All devices) ==========
             // Type 0x01: Device model identifier (1 byte) - All devices
         case 0x01:
@@ -1913,6 +1914,7 @@ function decodeUplink(input) {
             if (idx < bytes.length)
                 idx++;
             break;
+            }
         } catch (error) {
             errors.push(`Parse error at type 0x${type.toString(16)}: ${error.message}`);
             break;
