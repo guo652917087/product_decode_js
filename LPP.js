@@ -935,984 +935,986 @@ function decodeUplink(input) {
             break;
 
         try {
-            // ========== DEVICE MODEL (All devices) ==========
-            // Type 0x01: Device model identifier (1 byte) - All devices
-        case 0x01:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated model field");
-                break;
-            }
-            const modelCode = bytes[idx++];
-            data.model = MODEL_MAP[modelCode] || (`unknown_0x${modelCode.toString(16)}`);
-            break;
-
-        case 0x02: // Downlink count (4 bytes BE)
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated downlink count");
-                break;
-            }
-            data.downlinkCount = readUint32BE(bytes, idx);
-            idx += 4;
-            break;
-
-            // ========== TAMPER DETECTION (AN-301, AN-303, AN-304, AN-305, AN-113, AN-122, AN-306, AN-308, JTY-AN-503A) ==========
-            // Type 0x03: Tamper event (1 byte)
-        case 0x03:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated tamper event");
-                break;
-            }
-            data.tamperEvent = bytes[idx++];
-            break;
-
-            // ========== BATTERY INFORMATION (Most battery-powered devices) ==========
-            // Type 0x04: Battery voltage in millivolts (2 bytes, big-endian) - AN-113, AN-308, EX205, EX301, EF5600-DN1, CU606
-        case 0x04:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated battery voltage");
-                break;
-            }
-            const battVoltage = readUint16BE(bytes, idx);
-            data.batteryVoltage = Number((battVoltage / 1000).toFixed(3)); // Convert mV to V
-            idx += 2;
-            break;
-
-            // Type 0x05: Battery voltage event (1 byte) - AN-204, AN-301, AN-303, AN-304, AN-305, AN-113, AN-308, EX205, EX301, JTY-AN-503A
-        case 0x05:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated battery event");
-                break;
-            }
-            const battEvent = bytes[idx++];
-            data.batteryVoltageEvent = battEvent;
-            data.batteryLowEvent = battEvent === 0x01 ? 1 : 0;
-            break;
-
-        case 0x06: // Boot version (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.bootVersion = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x07: // Main version (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.mainVersion = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x08: // App version (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.appVersion = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x09: // Hardware version (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.hardwareVersion = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x0a: // P2P update frequency (4 bytes BE)
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated P2P update frequency");
-                break;
-            }
-            data.p2pUpdateFrequency = readUint32BE(bytes, idx);
-            idx += 4;
-            break;
-
-        case 0x0b: // P2P config frequency (4 bytes BE)
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated P2P config frequency");
-                break;
-            }
-            data.p2pConfigFrequency = readUint32BE(bytes, idx);
-            idx += 4;
-            break;
-
-        case 0x0c: // Radio chip (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.radioChip = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x0d: // Reset cause (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.resetCause = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x0e: // LoRaWAN region (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.lorawanRegion = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-        case 0x0f: // AT response (null-terminated string)
-            {
-                const result = readStringNullTerm(bytes, idx);
-                data.atResponse = result.str;
-                idx = result.nextIndex;
-            }
-            break;
-
-            // ========== TEMPERATURE & HUMIDITY (AN-303, CU606, JTY-AN-503A, EF5600-DN1, SC001, EX301) ==========
-            // Type 0x10: Temperature in Celsius (2 bytes signed, big-endian, ×100)
-        case 0x10:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated temperature");
-                break;
-            }
-            const temp = readInt16BE(bytes, idx);
-            data.temperature = Number((temp / 100).toFixed(2));
-            idx += 2;
-            break;
-
-            // Type 0x11: Temperature event (1 byte) - AN-303, SC001
-        case 0x11:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated temperature event");
-                break;
-            }
-            const tempEvent = bytes[idx++];
-            data.temperatureEvent = tempEvent;
-            data.temperatureState = tempEvent === 0 ? 0 : 1;
-            break;
-
-            // Type 0x12: Humidity in %RH (2 bytes unsigned, big-endian, ×10)
-        case 0x12:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated humidity");
-                break;
-            }
-            const hum = readUint16BE(bytes, idx);
-            data.humidity = Number((hum / 10).toFixed(1));
-            idx += 2;
-            break;
-
-            // Type 0x13: Humidity event (1 byte) - AN-303
-        case 0x13:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated humidity event");
-                break;
-            }
-            const humEvent = bytes[idx++];
-            data.humidityEvent = humEvent;
-            data.humidityState = humEvent === 0 ? 0 : 1;
-            break;
-
-            // ========== SOS EMERGENCY (AN-301, SC001, CM100) ==========
-            // Type 0x14: SOS event (1 byte)
-        case 0x14:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated SOS event");
-                break;
-            }
-            data.sosEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-        case 0x15: // Gas concentration (2 bytes BE, ppm)
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated gas concentration");
-                break;
-            }
-            data.gasConcentration = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // ========== SECURITY & SAFETY DEVICES ==========
-            // Type 0x17: Infrared event (1 byte) - AN-304
-        case 0x17:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated infrared event");
-                break;
-            }
-            data.infraredEvent = bytes[idx++];
-            break;
-
-            // Type 0x18: Door state (1 byte) - AN-305
-        case 0x18:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated door state");
-                break;
-            }
-            data.doorState = bytes[idx++];
-            break;
-
-            // Type 0x1B: Sensor status (1 byte) - EX205 abnormal packet
-        case 0x1B:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated sensor status");
-                break;
-            }
-            data.sensorStatus = bytes[idx++];
-            data.sensorAbnormal = data.sensorStatus === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0x21: Water leakage event (1 byte) - AN-204
-        case 0x21:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated water event");
-                break;
-            }
-            data.waterEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0x22: Relay/Switch state (1 byte) - DS-501, DS-103, EF5600-DN1
-        case 0x22:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated relay/switch state");
-                break;
-            }
-            // For DS-103, store in array for multiple switches
-            if (data.model === "DS-103") {
-                if (!data.switchStates)
-                    data.switchStates = [];
-                data.switchStates.push(bytes[idx++]);
-            } else {
-                // For other devices, treat as power state
-                data.powerState = bytes[idx++];
-            }
-            break;
-
-            // Type 0x24: Door event (1 byte) - AN-305
-        case 0x24:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated door event");
-                break;
-            }
-            data.doorEvent = bytes[idx++];
-            break;
-
-            // Type 0x31: Smoke alarm event (1 byte) - JTY-AN-503A
-        case 0x31:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated smoke event");
-                break;
-            }
-            data.smokeEvent = bytes[idx++];
-            break;
-
-            // ========== POSITIONING & LOCATION (AN-122, SC001) ==========
-            // Type 0x3E: Latitude (4 bytes signed, big-endian, ÷10000000)
-        case 0x3E:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated latitude");
-                break;
-            }
-            const lat = readInt32BE(bytes, idx);
-            data.latitude = Number((lat / 10000000).toFixed(7));
-            idx += 4;
-            break;
-
-            // Type 0x3A: Alarm status (1 byte) - AN-307
-        case 0x3A:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated alarm status");
-                break;
-            }
-            data.alarmStatus = bytes[idx++];
-            break;
-
-            // Type 0x43: Longitude (4 bytes signed, big-endian, ÷10000000)
-        case 0x43:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated longitude");
-                break;
-            }
-            const lon = readInt32BE(bytes, idx);
-            data.longitude = Number((lon / 10000000).toFixed(7));
-            idx += 4;
-            break;
-
-            // ========== AIR QUALITY SENSOR (CU606) ==========
-            // Type 0x49: CO2 concentration (2 bytes unsigned, big-endian, unit: ppm)
-        case 0x49:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated CO2");
-                break;
-            }
-            data.co2 = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // Type 0x48: Illuminance (4 bytes unsigned, big-endian, unit: Lux) - AN-308
-        case 0x48:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated illuminance");
-                break;
-            }
-            data.illuminance = readUint32BE(bytes, idx);
-            idx += 4;
-            break;
-
-            // Type 0x52: PM2.5 concentration (2 bytes unsigned, big-endian, unit: μg/m³) - CU606
-        case 0x52:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated PM2.5");
-                break;
-            }
-            data.pm25 = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // ========== SAFETY HELMET SENSORS (SC001) ==========
-            // Type 0x57: Atmospheric pressure (4 bytes unsigned, big-endian, unit: Pa)
-        case 0x57:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated atmospheric pressure");
-                break;
-            }
-            data.atmosphericPressure = readUint32BE(bytes, idx);
-            idx += 4;
-            break;
-
-            // ========== TILT/ANGLE SENSOR (AN-113, AN-122) ==========
-            // Type 0x6B: Tilt angle (2 bytes, degrees)
-        case 0x6B:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated tilt angle");
-                break;
-            }
-            data.tiltAngle = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // ========== PACKET TYPE (Most devices) ==========
-            // Type 0x6D: Packet type (1 byte) - heartbeat(0x00) or data report(0x01)
-        case 0x6D:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated packet type");
-                break;
-            }
-            data.packetType = bytes[idx++];
-            data.isHeartbeat = data.packetType === 0x00 ? 1 : 0;
-            break;
-
-            // ========== WATER LEAKAGE SENSOR (AN-204) ==========
-            // Type 0x73: Water leakage duration in minutes (2 bytes, big-endian)
-        case 0x73:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated water duration");
-                break;
-            }
-            data.waterDuration = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // ========== DOOR STATE (AN-305) ==========
-            // Type 0x76: Door state (alternate) (1 byte)
-        case 0x76:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated door state");
-                break;
-            }
-            data.doorState = bytes[idx++];
-            break;
-
-            // ========== TAMPER STATE (AN-301, AN-303, AN-304, AN-305, AN-113, AN-122, AN-306, AN-308, JTY-AN-503A) ==========
-            // Type 0x77: Tamper state (1 byte)
-        case 0x77:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated tamper state");
-                break;
-            }
-            data.tamperStatus = bytes[idx++];
-            data.tamper = data.tamperStatus;
-            break;
-
-            // ========== BATTERY VOLTAGE STATE (AN-301, AN-303, AN-304, AN-113, AN-308, EX205, EX301, CU606, JTY-AN-503A) ==========
-            // Type 0x7D: Battery voltage state (1 byte)
-        case 0x7D:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated battery voltage state");
-                break;
-            }
-            data.batteryVoltageState = bytes[idx++];
-            break;
-
-            // ========== SMART SOCKET (DS-501, DS-103) ==========
-            // Type 0x79: Local timestamp (4 bytes, big-endian, Unix time)
-        case 0x79:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated timestamp");
-                break;
-            }
-            const timestamp = readUint32BE(bytes, idx);
-            data.timestamp = timestamp;
-            if (timestamp !== 0) {
-                data.localTime = new Date(timestamp * 1000).toISOString();
-            }
-            idx += 4;
-            break;
-
-            // Type 0x80: Timer status (4 bytes bitfield, big-endian) - DS-501, DS-103
-        case 0x80:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated timer status");
-                break;
-            }
-            const timerStatus = readUint32BE(bytes, idx);
-            data.timerStatus = timerStatus;
-            // Parse common timer flags
-            data.timerCloseEnabled = (timerStatus & 0x01) !== 0;
-            data.timerOpenEnabled = (timerStatus & 0x02) !== 0;
-            data.timerLockEnabled = (timerStatus & 0x40000000) !== 0;
-            data.timerUnlockEnabled = (timerStatus & 0x80000000) !== 0;
-            idx += 4;
-            break;
-
-            // Type 0x81: Liquid level event (1 byte) - EX205
-        case 0x81:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated liquid level event");
-                break;
-            }
-            data.liquidLevelEvent = bytes[idx++];
-            break;
-
-            // Type 0x82: Sensor self-check event (1 byte) - JTY-AN-503A
-        case 0x82:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated self-check event");
-                break;
-            }
-            data.selfCheckEvent = bytes[idx++];
-            break;
-
-            // Type 0x84: Smoke alarm status (1 byte) - JTY-AN-503A
-        case 0x84:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated smoke status");
-                break;
-            }
-            data.smokeStatus = bytes[idx++];
-            break;
-
-            // Type 0x85: Water leakage status (1 byte) - AN-204
-        case 0x85:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated water status");
-                break;
-            }
-            data.waterStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // ========== RADAR LIQUID LEVEL METER (EX205) ==========
-            // Type 0x80: Liquid level (2 bytes unsigned, big-endian, ÷10, unit: cm)
-        case 0x80:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated liquid level");
-                break;
-            }
-            const level = readUint16BE(bytes, idx);
-            data.liquidLevel = Number((level / 10).toFixed(1));
-            idx += 2;
-            break;
-
-            // ========== BATTERY PERCENTAGE (SC001, AN-122, CM100) ==========
-            // Type 0x93: Battery percentage (1 byte, 0-100%)
-        case 0x93:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated battery percentage");
-                break;
-            }
-            data.batteryLevel = bytes[idx++];
-            break;
-
-            // ========== THERMOSTAT (W8004) ==========
-            // Type 0x94: RS485 address (1 byte)
-        case 0x94:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated RS485 address");
-                break;
-            }
-            data.rs485Addr = bytes[idx++];
-            break;
-
-            // Type 0x95: Modbus data block (variable length)
-        case 0x95:
-            if (idx >= bytes.length) {
-                warnings.push("Missing Modbus data length");
-                break;
-            }
-            const modbusLen = bytes[idx++];
-            if (idx + modbusLen > bytes.length) {
-                warnings.push("Modbus block exceeds payload, trimming");
-            }
-            const endIdx = Math.min(idx + modbusLen, bytes.length);
-            const modbusBytes = bytes.slice(idx, endIdx);
-            parseModbusBlock(modbusBytes, data);
-            idx = endIdx;
-            break;
-
-            // ========== SMART SOCKET LOCK STATE (DS-501, DS-103) ==========
-            // Type 0x96: Lock state (1 byte)
-        case 0x96:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated lock state");
-                break;
-            }
-            data.lockState = bytes[idx++];
-            break;
-
-            // ========== SMART SOCKET POWER METERING (DS-501) ==========
-            // Type 0x97: Voltage RMS (2 bytes unsigned, big-endian, ÷10, unit: V)
-        case 0x97:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated voltage");
-                break;
-            }
-            data.voltage = readUint16BE(bytes, idx) / 10.0;
-            idx += 2;
-            break;
-
-            // Type 0x98: Current RMS (2 bytes unsigned, big-endian, ÷100, unit: A)
-        case 0x98:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated current");
-                break;
-            }
-            data.current = readUint16BE(bytes, idx) / 100.0;
-            idx += 2;
-            break;
-
-            // Type 0x99: Active power (2 bytes signed, big-endian, ÷100, unit: W)
-        case 0x99:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated power");
-                break;
-            }
-            data.activePower = readInt16BE(bytes, idx) / 100.0;
-            idx += 2;
-            break;
-
-            // Type 0x9A: Energy consumption (4 bytes unsigned, big-endian, ÷100, unit: kWh)
-        case 0x9A:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated energy");
-                break;
-            }
-            data.energy = readUint32BE(bytes, idx) / 100.0;
-            idx += 4;
-            break;
-
-            // Type 0x9B: Liquid level status (1 byte) - EX205
-        case 0x9B:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated liquid level status");
-                break;
-            }
-            data.liquidLevelStatus = bytes[idx++];
-            break;
-
-            // Type 0x9F: Formaldehyde concentration (2 bytes unsigned, big-endian, unit: μg/m³) - CU606
-        case 0x9F:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated formaldehyde");
-                break;
-            }
-            data.formaldehyde = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // Type 0xA0: TVOC concentration (2 bytes unsigned, big-endian, unit: μg/m³) - CU606
-        case 0xA0:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated TVOC");
-                break;
-            }
-            data.tvoc = readUint16BE(bytes, idx);
-            idx += 2;
-            break;
-
-            // ========== ACCELERATION ALARM (AN-113, AN-122) ==========
-            // Type 0xA8: Acceleration alarm event (1 byte)
-        case 0xA8:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated acceleration alarm");
-                break;
-            }
-            data.accelerationAlarm = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xA9: Temperature alarm status (1 byte) - SC001, EX301
-        case 0xA9:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated temperature alarm status");
-                break;
-            }
-            data.temperatureAlarmStatus = bytes[idx++];
-            break;
-
-            // ========== TEMPERATURE (SC001, EX301) ==========
-            // Type 0xAA: Temperature (2 bytes signed, big-endian, ÷10, unit: °C)
-        case 0xAA:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated temperature (0xAA)");
-                break;
-            }
-            const tempAA = readInt16BE(bytes, idx);
-            data.temperature = Number((tempAA / 10).toFixed(1));
-            idx += 2;
-            break;
-
-            // ========== RADAR HUMAN PRESENCE SENSOR (AN-306) ==========
-            // Type 0xBD: Human presence status (1 byte)
-        case 0xBD:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated human presence status");
-                break;
-            }
-            data.presenceStatus = bytes[idx++];
-            data.presence = data.presenceStatus === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xBE: Human presence event (1 byte)
-        case 0xBE:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated human presence event");
-                break;
-            }
-            data.presenceEvent = bytes[idx++];
-            break;
-
-            // ========== RADAR LIQUID LEVEL METER DISTANCE (EX205) ==========
-            // Type 0xB9: Distance (4 bytes unsigned, big-endian, ÷10, unit: cm)
-        case 0xB9:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated distance");
-                break;
-            }
-            const distance = readUint32BE(bytes, idx);
-            data.distance = Number((distance / 10).toFixed(1));
-            idx += 4;
-            break;
-
-            // ========== SWITCH TIMER STATUS (DS-103) ==========
-            // Type 0xB0: Switch timer status (4 bytes bitfield, big-endian)
-        case 0xB0:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated switch timer status");
-                break;
-            }
-            const switchTimerStatus = readUint32BE(bytes, idx);
-            data.switchTimerStatus = switchTimerStatus;
-            // Parse DS-103 specific timer flags
-            data.timerCloseEnabled1 = (switchTimerStatus & 0x01) !== 0;
-            data.timerOpenEnabled1 = (switchTimerStatus & 0x02) !== 0;
-            data.timerCloseEnabled2 = (switchTimerStatus & 0x04) !== 0;
-            data.timerOpenEnabled2 = (switchTimerStatus & 0x08) !== 0;
-            data.timerCloseEnabled3 = (switchTimerStatus & 0x10) !== 0;
-            data.timerOpenEnabled3 = (switchTimerStatus & 0x20) !== 0;
-            data.timerLockEnabled = (switchTimerStatus & 0x40000000) !== 0;
-            data.timerUnlockEnabled = (switchTimerStatus & 0x80000000) !== 0;
-            idx += 4;
-            break;
-
-            // ========== BATTERY LOW PERCENTAGE ALARM (SC001, AN-122, CM100) ==========
-            // Type 0xB8: Battery low percentage alarm event (1 byte)
-        case 0xB8:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated battery low alarm");
-                break;
-            }
-            data.batteryLowAlarm = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // ========== BEACON DATA (SC001, AN-122, CM100) ==========
-            // Type 0xBA: Simple beacon data (8 bytes fixed)
-        case 0xBA:
-            if (idx >= bytes.length) {
-                warnings.push("Missing simple beacon data length");
-                break;
-            }
-            const simpleBeaconLen = bytes[idx++];
-            // Find which beacon index this is (0, 1, or 2)
-            let beaconIndex = 0;
-            if (data.beacon0)
-                beaconIndex = 1;
-            if (data.beacon1)
-                beaconIndex = 2;
-            if (idx + simpleBeaconLen > bytes.length) {
-                warnings.push("Simple beacon data block exceeds payload, trimming");
-            }
-            const simpleBeaconEndIdx = Math.min(idx + simpleBeaconLen, bytes.length);
-            const simpleBeaconBytes = bytes.slice(idx, simpleBeaconEndIdx);
-            parseSimpleBeaconData(simpleBeaconBytes, data, beaconIndex);
-            idx = simpleBeaconEndIdx;
-            break;
-
-            // ========== VIBRATION SENSOR (EX301) ==========
-            // Type 0xBF: Vibration sensor data (variable length, 30 bytes fixed)
-        case 0xBF:
-            if (idx >= bytes.length) {
-                warnings.push("Missing vibration data length");
-                break;
-            }
-            const vibDataLen = bytes[idx++];
-            if (idx + vibDataLen > bytes.length) {
-                warnings.push("Vibration data block exceeds payload, trimming");
-            }
-            const vibEndIdx = Math.min(idx + vibDataLen, bytes.length);
-            const vibBytes = bytes.slice(idx, vibEndIdx);
-            parseVibrationData(vibBytes, data);
-            idx = vibEndIdx;
-            break;
-
-            // ========== TILT ALARM (AN-113, AN-122) ==========
-            // Type 0xC2: Tilt alarm event (1 byte)
-        case 0xC2:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated tilt alarm");
-                break;
-            }
-            data.tiltAlarm = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // ========== POSITION ACCURACY (AN-122, SC001) ==========
-            // Type 0xC3: Position accuracy factor (1 byte, ÷10, 255=invalid)
-        case 0xC3:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated position accuracy");
-                break;
-            }
-            const accuracy = bytes[idx++];
-            data.positionAccuracy = accuracy === 255 ? null : Number((accuracy / 10).toFixed(1));
-            break;
-
-            // ========== ELECTRICAL FIRE MONITOR (EF5600-DN1) ==========
-            // Type 0xC6: Electrical fire data (variable length, 103 bytes)
-        case 0xC6:
-            if (idx >= bytes.length) {
-                warnings.push("Missing electrical data length");
-                break;
-            }
-            const elecDataLen = bytes[idx++];
-            if (idx + elecDataLen > bytes.length) {
-                warnings.push("Electrical data block exceeds payload, trimming");
-            }
-            const elecEndIdx = Math.min(idx + elecDataLen, bytes.length);
-            const elecBytes = bytes.slice(idx, elecEndIdx);
-            parseElectricalFireData(elecBytes, data);
-            idx = elecEndIdx;
-            break;
-
-            // Type 0xC7: Electrical fire alarm attribute (2 bytes)
-        case 0xC7:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated electrical alarm attribute");
-                break;
-            }
-            const alarmAttribute = readUint16BE(bytes, idx);
-            const alarmAttrParsed = parseElectricalAlarm(alarmAttribute);
-            Object.assign(data, alarmAttrParsed);
-            data.electricalAlarm = alarmAttribute !== 0 ? 1 : 0;
-            data.electricalAlarmAttribute = alarmAttribute;
-            idx += 2;
-            break;
-
-            // Type 0xC8: Electrical fire alarm event (2 bytes)
-        case 0xC8:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated electrical alarm event");
-                break;
-            }
-            const alarmEvent = readUint16BE(bytes, idx);
-            const alarmEventParsed = parseElectricalAlarm(alarmEvent);
-            data.electricalAlarmEvent = alarmEvent;
-            data.alarmEventActive = alarmEvent !== 0 ? 1 : 0;
-            Object.keys(alarmEventParsed).forEach(key => {
-                if (key !== 'anyAlarm') {
-                    data[key + 'Event'] = alarmEventParsed[key];
+            switch (type) {
+                // ========== DEVICE MODEL (All devices) ==========
+                // Type 0x01: Device model identifier (1 byte) - All devices
+            case 0x01:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated model field");
+                    break;
                 }
-            });
-            idx += 2;
-            break;
+                const modelCode = bytes[idx++];
+                data.model = MODEL_MAP[modelCode] || (`unknown_0x${modelCode.toString(16)}`);
+                break;
 
-            // Type 0xC0: Vibration sensor alarm status (2 bytes, big-endian)
-        case 0xC0:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated vibration alarm status");
+            case 0x02: // Downlink count (4 bytes BE)
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated downlink count");
+                    break;
+                }
+                data.downlinkCount = readUint32BE(bytes, idx);
+                idx += 4;
+                break;
+
+                // ========== TAMPER DETECTION (AN-301, AN-303, AN-304, AN-305, AN-113, AN-122, AN-306, AN-308, JTY-AN-503A) ==========
+                // Type 0x03: Tamper event (1 byte)
+            case 0x03:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated tamper event");
+                    break;
+                }
+                data.tamperEvent = bytes[idx++];
+                break;
+
+                // ========== BATTERY INFORMATION (Most battery-powered devices) ==========
+                // Type 0x04: Battery voltage in millivolts (2 bytes, big-endian) - AN-113, AN-308, EX205, EX301, EF5600-DN1, CU606
+            case 0x04:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated battery voltage");
+                    break;
+                }
+                const battVoltage = readUint16BE(bytes, idx);
+                data.batteryVoltage = Number((battVoltage / 1000).toFixed(3)); // Convert mV to V
+                idx += 2;
+                break;
+
+                // Type 0x05: Battery voltage event (1 byte) - AN-204, AN-301, AN-303, AN-304, AN-305, AN-113, AN-308, EX205, EX301, JTY-AN-503A
+            case 0x05:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated battery event");
+                    break;
+                }
+                const battEvent = bytes[idx++];
+                data.batteryVoltageEvent = battEvent;
+                data.batteryLowEvent = battEvent === 0x01 ? 1 : 0;
+                break;
+
+            case 0x06: // Boot version (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.bootVersion = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x07: // Main version (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.mainVersion = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x08: // App version (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.appVersion = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x09: // Hardware version (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.hardwareVersion = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x0a: // P2P update frequency (4 bytes BE)
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated P2P update frequency");
+                    break;
+                }
+                data.p2pUpdateFrequency = readUint32BE(bytes, idx);
+                idx += 4;
+                break;
+
+            case 0x0b: // P2P config frequency (4 bytes BE)
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated P2P config frequency");
+                    break;
+                }
+                data.p2pConfigFrequency = readUint32BE(bytes, idx);
+                idx += 4;
+                break;
+
+            case 0x0c: // Radio chip (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.radioChip = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x0d: // Reset cause (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.resetCause = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x0e: // LoRaWAN region (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.lorawanRegion = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+            case 0x0f: // AT response (null-terminated string)
+                {
+                    const result = readStringNullTerm(bytes, idx);
+                    data.atResponse = result.str;
+                    idx = result.nextIndex;
+                }
+                break;
+
+                // ========== TEMPERATURE & HUMIDITY (AN-303, CU606, JTY-AN-503A, EF5600-DN1, SC001, EX301) ==========
+                // Type 0x10: Temperature in Celsius (2 bytes signed, big-endian, ×100)
+            case 0x10:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated temperature");
+                    break;
+                }
+                const temp = readInt16BE(bytes, idx);
+                data.temperature = Number((temp / 100).toFixed(2));
+                idx += 2;
+                break;
+
+                // Type 0x11: Temperature event (1 byte) - AN-303, SC001
+            case 0x11:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated temperature event");
+                    break;
+                }
+                const tempEvent = bytes[idx++];
+                data.temperatureEvent = tempEvent;
+                data.temperatureState = tempEvent === 0 ? 0 : 1;
+                break;
+
+                // Type 0x12: Humidity in %RH (2 bytes unsigned, big-endian, ×10)
+            case 0x12:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated humidity");
+                    break;
+                }
+                const hum = readUint16BE(bytes, idx);
+                data.humidity = Number((hum / 10).toFixed(1));
+                idx += 2;
+                break;
+
+                // Type 0x13: Humidity event (1 byte) - AN-303
+            case 0x13:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated humidity event");
+                    break;
+                }
+                const humEvent = bytes[idx++];
+                data.humidityEvent = humEvent;
+                data.humidityState = humEvent === 0 ? 0 : 1;
+                break;
+
+                // ========== SOS EMERGENCY (AN-301, SC001, CM100) ==========
+                // Type 0x14: SOS event (1 byte)
+            case 0x14:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated SOS event");
+                    break;
+                }
+                data.sosEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+            case 0x15: // Gas concentration (2 bytes BE, ppm)
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated gas concentration");
+                    break;
+                }
+                data.gasConcentration = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // ========== SECURITY & SAFETY DEVICES ==========
+                // Type 0x17: Infrared event (1 byte) - AN-304
+            case 0x17:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated infrared event");
+                    break;
+                }
+                data.infraredEvent = bytes[idx++];
+                break;
+
+                // Type 0x18: Door state (1 byte) - AN-305
+            case 0x18:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated door state");
+                    break;
+                }
+                data.doorState = bytes[idx++];
+                break;
+
+                // Type 0x1B: Sensor status (1 byte) - EX205 abnormal packet
+            case 0x1B:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated sensor status");
+                    break;
+                }
+                data.sensorStatus = bytes[idx++];
+                data.sensorAbnormal = data.sensorStatus === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0x21: Water leakage event (1 byte) - AN-204
+            case 0x21:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated water event");
+                    break;
+                }
+                data.waterEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0x22: Relay/Switch state (1 byte) - DS-501, DS-103, EF5600-DN1
+            case 0x22:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated relay/switch state");
+                    break;
+                }
+                // For DS-103, store in array for multiple switches
+                if (data.model === "DS-103") {
+                    if (!data.switchStates)
+                        data.switchStates = [];
+                    data.switchStates.push(bytes[idx++]);
+                } else {
+                    // For other devices, treat as power state
+                    data.powerState = bytes[idx++];
+                }
+                break;
+
+                // Type 0x24: Door event (1 byte) - AN-305
+            case 0x24:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated door event");
+                    break;
+                }
+                data.doorEvent = bytes[idx++];
+                break;
+
+                // Type 0x31: Smoke alarm event (1 byte) - JTY-AN-503A
+            case 0x31:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated smoke event");
+                    break;
+                }
+                data.smokeEvent = bytes[idx++];
+                break;
+
+                // ========== POSITIONING & LOCATION (AN-122, SC001) ==========
+                // Type 0x3E: Latitude (4 bytes signed, big-endian, ÷10000000)
+            case 0x3E:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated latitude");
+                    break;
+                }
+                const lat = readInt32BE(bytes, idx);
+                data.latitude = Number((lat / 10000000).toFixed(7));
+                idx += 4;
+                break;
+
+                // Type 0x3A: Alarm status (1 byte) - AN-307
+            case 0x3A:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated alarm status");
+                    break;
+                }
+                data.alarmStatus = bytes[idx++];
+                break;
+
+                // Type 0x43: Longitude (4 bytes signed, big-endian, ÷10000000)
+            case 0x43:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated longitude");
+                    break;
+                }
+                const lon = readInt32BE(bytes, idx);
+                data.longitude = Number((lon / 10000000).toFixed(7));
+                idx += 4;
+                break;
+
+                // ========== AIR QUALITY SENSOR (CU606) ==========
+                // Type 0x49: CO2 concentration (2 bytes unsigned, big-endian, unit: ppm)
+            case 0x49:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated CO2");
+                    break;
+                }
+                data.co2 = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // Type 0x48: Illuminance (4 bytes unsigned, big-endian, unit: Lux) - AN-308
+            case 0x48:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated illuminance");
+                    break;
+                }
+                data.illuminance = readUint32BE(bytes, idx);
+                idx += 4;
+                break;
+
+                // Type 0x52: PM2.5 concentration (2 bytes unsigned, big-endian, unit: μg/m³) - CU606
+            case 0x52:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated PM2.5");
+                    break;
+                }
+                data.pm25 = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // ========== SAFETY HELMET SENSORS (SC001) ==========
+                // Type 0x57: Atmospheric pressure (4 bytes unsigned, big-endian, unit: Pa)
+            case 0x57:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated atmospheric pressure");
+                    break;
+                }
+                data.atmosphericPressure = readUint32BE(bytes, idx);
+                idx += 4;
+                break;
+
+                // ========== TILT/ANGLE SENSOR (AN-113, AN-122) ==========
+                // Type 0x6B: Tilt angle (2 bytes, degrees)
+            case 0x6B:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated tilt angle");
+                    break;
+                }
+                data.tiltAngle = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // ========== PACKET TYPE (Most devices) ==========
+                // Type 0x6D: Packet type (1 byte) - heartbeat(0x00) or data report(0x01)
+            case 0x6D:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated packet type");
+                    break;
+                }
+                data.packetType = bytes[idx++];
+                data.isHeartbeat = data.packetType === 0x00 ? 1 : 0;
+                break;
+
+                // ========== WATER LEAKAGE SENSOR (AN-204) ==========
+                // Type 0x73: Water leakage duration in minutes (2 bytes, big-endian)
+            case 0x73:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated water duration");
+                    break;
+                }
+                data.waterDuration = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // ========== DOOR STATE (AN-305) ==========
+                // Type 0x76: Door state (alternate) (1 byte)
+            case 0x76:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated door state");
+                    break;
+                }
+                data.doorState = bytes[idx++];
+                break;
+
+                // ========== TAMPER STATE (AN-301, AN-303, AN-304, AN-305, AN-113, AN-122, AN-306, AN-308, JTY-AN-503A) ==========
+                // Type 0x77: Tamper state (1 byte)
+            case 0x77:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated tamper state");
+                    break;
+                }
+                data.tamperStatus = bytes[idx++];
+                data.tamper = data.tamperStatus;
+                break;
+
+                // ========== BATTERY VOLTAGE STATE (AN-301, AN-303, AN-304, AN-113, AN-308, EX205, EX301, CU606, JTY-AN-503A) ==========
+                // Type 0x7D: Battery voltage state (1 byte)
+            case 0x7D:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated battery voltage state");
+                    break;
+                }
+                data.batteryVoltageState = bytes[idx++];
+                break;
+
+                // ========== SMART SOCKET (DS-501, DS-103) ==========
+                // Type 0x79: Local timestamp (4 bytes, big-endian, Unix time)
+            case 0x79:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated timestamp");
+                    break;
+                }
+                const timestamp = readUint32BE(bytes, idx);
+                data.timestamp = timestamp;
+                if (timestamp !== 0) {
+                    data.localTime = new Date(timestamp * 1000).toISOString();
+                }
+                idx += 4;
+                break;
+
+                // Type 0x80: Timer status (4 bytes bitfield, big-endian) - DS-501, DS-103
+            case 0x80:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated timer status");
+                    break;
+                }
+                const timerStatus = readUint32BE(bytes, idx);
+                data.timerStatus = timerStatus;
+                // Parse common timer flags
+                data.timerCloseEnabled = (timerStatus & 0x01) !== 0;
+                data.timerOpenEnabled = (timerStatus & 0x02) !== 0;
+                data.timerLockEnabled = (timerStatus & 0x40000000) !== 0;
+                data.timerUnlockEnabled = (timerStatus & 0x80000000) !== 0;
+                idx += 4;
+                break;
+
+                // Type 0x81: Liquid level event (1 byte) - EX205
+            case 0x81:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated liquid level event");
+                    break;
+                }
+                data.liquidLevelEvent = bytes[idx++];
+                break;
+
+                // Type 0x82: Sensor self-check event (1 byte) - JTY-AN-503A
+            case 0x82:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated self-check event");
+                    break;
+                }
+                data.selfCheckEvent = bytes[idx++];
+                break;
+
+                // Type 0x84: Smoke alarm status (1 byte) - JTY-AN-503A
+            case 0x84:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated smoke status");
+                    break;
+                }
+                data.smokeStatus = bytes[idx++];
+                break;
+
+                // Type 0x85: Water leakage status (1 byte) - AN-204
+            case 0x85:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated water status");
+                    break;
+                }
+                data.waterStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // ========== RADAR LIQUID LEVEL METER (EX205) ==========
+                // Type 0x80: Liquid level (2 bytes unsigned, big-endian, ÷10, unit: cm)
+            case 0x80:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated liquid level");
+                    break;
+                }
+                const level = readUint16BE(bytes, idx);
+                data.liquidLevel = Number((level / 10).toFixed(1));
+                idx += 2;
+                break;
+
+                // ========== BATTERY PERCENTAGE (SC001, AN-122, CM100) ==========
+                // Type 0x93: Battery percentage (1 byte, 0-100%)
+            case 0x93:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated battery percentage");
+                    break;
+                }
+                data.batteryLevel = bytes[idx++];
+                break;
+
+                // ========== THERMOSTAT (W8004) ==========
+                // Type 0x94: RS485 address (1 byte)
+            case 0x94:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated RS485 address");
+                    break;
+                }
+                data.rs485Addr = bytes[idx++];
+                break;
+
+                // Type 0x95: Modbus data block (variable length)
+            case 0x95:
+                if (idx >= bytes.length) {
+                    warnings.push("Missing Modbus data length");
+                    break;
+                }
+                const modbusLen = bytes[idx++];
+                if (idx + modbusLen > bytes.length) {
+                    warnings.push("Modbus block exceeds payload, trimming");
+                }
+                const endIdx = Math.min(idx + modbusLen, bytes.length);
+                const modbusBytes = bytes.slice(idx, endIdx);
+                parseModbusBlock(modbusBytes, data);
+                idx = endIdx;
+                break;
+
+                // ========== SMART SOCKET LOCK STATE (DS-501, DS-103) ==========
+                // Type 0x96: Lock state (1 byte)
+            case 0x96:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated lock state");
+                    break;
+                }
+                data.lockState = bytes[idx++];
+                break;
+
+                // ========== SMART SOCKET POWER METERING (DS-501) ==========
+                // Type 0x97: Voltage RMS (2 bytes unsigned, big-endian, ÷10, unit: V)
+            case 0x97:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated voltage");
+                    break;
+                }
+                data.voltage = readUint16BE(bytes, idx) / 10.0;
+                idx += 2;
+                break;
+
+                // Type 0x98: Current RMS (2 bytes unsigned, big-endian, ÷100, unit: A)
+            case 0x98:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated current");
+                    break;
+                }
+                data.current = readUint16BE(bytes, idx) / 100.0;
+                idx += 2;
+                break;
+
+                // Type 0x99: Active power (2 bytes signed, big-endian, ÷100, unit: W)
+            case 0x99:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated power");
+                    break;
+                }
+                data.activePower = readInt16BE(bytes, idx) / 100.0;
+                idx += 2;
+                break;
+
+                // Type 0x9A: Energy consumption (4 bytes unsigned, big-endian, ÷100, unit: kWh)
+            case 0x9A:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated energy");
+                    break;
+                }
+                data.energy = readUint32BE(bytes, idx) / 100.0;
+                idx += 4;
+                break;
+
+                // Type 0x9B: Liquid level status (1 byte) - EX205
+            case 0x9B:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated liquid level status");
+                    break;
+                }
+                data.liquidLevelStatus = bytes[idx++];
+                break;
+
+                // Type 0x9F: Formaldehyde concentration (2 bytes unsigned, big-endian, unit: μg/m³) - CU606
+            case 0x9F:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated formaldehyde");
+                    break;
+                }
+                data.formaldehyde = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // Type 0xA0: TVOC concentration (2 bytes unsigned, big-endian, unit: μg/m³) - CU606
+            case 0xA0:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated TVOC");
+                    break;
+                }
+                data.tvoc = readUint16BE(bytes, idx);
+                idx += 2;
+                break;
+
+                // ========== ACCELERATION ALARM (AN-113, AN-122) ==========
+                // Type 0xA8: Acceleration alarm event (1 byte)
+            case 0xA8:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated acceleration alarm");
+                    break;
+                }
+                data.accelerationAlarm = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xA9: Temperature alarm status (1 byte) - SC001, EX301
+            case 0xA9:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated temperature alarm status");
+                    break;
+                }
+                data.temperatureAlarmStatus = bytes[idx++];
+                break;
+
+                // ========== TEMPERATURE (SC001, EX301) ==========
+                // Type 0xAA: Temperature (2 bytes signed, big-endian, ÷10, unit: °C)
+            case 0xAA:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated temperature (0xAA)");
+                    break;
+                }
+                const tempAA = readInt16BE(bytes, idx);
+                data.temperature = Number((tempAA / 10).toFixed(1));
+                idx += 2;
+                break;
+
+                // ========== RADAR HUMAN PRESENCE SENSOR (AN-306) ==========
+                // Type 0xBD: Human presence status (1 byte)
+            case 0xBD:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated human presence status");
+                    break;
+                }
+                data.presenceStatus = bytes[idx++];
+                data.presence = data.presenceStatus === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xBE: Human presence event (1 byte)
+            case 0xBE:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated human presence event");
+                    break;
+                }
+                data.presenceEvent = bytes[idx++];
+                break;
+
+                // ========== RADAR LIQUID LEVEL METER DISTANCE (EX205) ==========
+                // Type 0xB9: Distance (4 bytes unsigned, big-endian, ÷10, unit: cm)
+            case 0xB9:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated distance");
+                    break;
+                }
+                const distance = readUint32BE(bytes, idx);
+                data.distance = Number((distance / 10).toFixed(1));
+                idx += 4;
+                break;
+
+                // ========== SWITCH TIMER STATUS (DS-103) ==========
+                // Type 0xB0: Switch timer status (4 bytes bitfield, big-endian)
+            case 0xB0:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated switch timer status");
+                    break;
+                }
+                const switchTimerStatus = readUint32BE(bytes, idx);
+                data.switchTimerStatus = switchTimerStatus;
+                // Parse DS-103 specific timer flags
+                data.timerCloseEnabled1 = (switchTimerStatus & 0x01) !== 0;
+                data.timerOpenEnabled1 = (switchTimerStatus & 0x02) !== 0;
+                data.timerCloseEnabled2 = (switchTimerStatus & 0x04) !== 0;
+                data.timerOpenEnabled2 = (switchTimerStatus & 0x08) !== 0;
+                data.timerCloseEnabled3 = (switchTimerStatus & 0x10) !== 0;
+                data.timerOpenEnabled3 = (switchTimerStatus & 0x20) !== 0;
+                data.timerLockEnabled = (switchTimerStatus & 0x40000000) !== 0;
+                data.timerUnlockEnabled = (switchTimerStatus & 0x80000000) !== 0;
+                idx += 4;
+                break;
+
+                // ========== BATTERY LOW PERCENTAGE ALARM (SC001, AN-122, CM100) ==========
+                // Type 0xB8: Battery low percentage alarm event (1 byte)
+            case 0xB8:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated battery low alarm");
+                    break;
+                }
+                data.batteryLowAlarm = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // ========== BEACON DATA (SC001, AN-122, CM100) ==========
+                // Type 0xBA: Simple beacon data (8 bytes fixed)
+            case 0xBA:
+                if (idx >= bytes.length) {
+                    warnings.push("Missing simple beacon data length");
+                    break;
+                }
+                const simpleBeaconLen = bytes[idx++];
+                // Find which beacon index this is (0, 1, or 2)
+                let beaconIndex = 0;
+                if (data.beacon0)
+                    beaconIndex = 1;
+                if (data.beacon1)
+                    beaconIndex = 2;
+                if (idx + simpleBeaconLen > bytes.length) {
+                    warnings.push("Simple beacon data block exceeds payload, trimming");
+                }
+                const simpleBeaconEndIdx = Math.min(idx + simpleBeaconLen, bytes.length);
+                const simpleBeaconBytes = bytes.slice(idx, simpleBeaconEndIdx);
+                parseSimpleBeaconData(simpleBeaconBytes, data, beaconIndex);
+                idx = simpleBeaconEndIdx;
+                break;
+
+                // ========== VIBRATION SENSOR (EX301) ==========
+                // Type 0xBF: Vibration sensor data (variable length, 30 bytes fixed)
+            case 0xBF:
+                if (idx >= bytes.length) {
+                    warnings.push("Missing vibration data length");
+                    break;
+                }
+                const vibDataLen = bytes[idx++];
+                if (idx + vibDataLen > bytes.length) {
+                    warnings.push("Vibration data block exceeds payload, trimming");
+                }
+                const vibEndIdx = Math.min(idx + vibDataLen, bytes.length);
+                const vibBytes = bytes.slice(idx, vibEndIdx);
+                parseVibrationData(vibBytes, data);
+                idx = vibEndIdx;
+                break;
+
+                // ========== TILT ALARM (AN-113, AN-122) ==========
+                // Type 0xC2: Tilt alarm event (1 byte)
+            case 0xC2:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated tilt alarm");
+                    break;
+                }
+                data.tiltAlarm = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // ========== POSITION ACCURACY (AN-122, SC001) ==========
+                // Type 0xC3: Position accuracy factor (1 byte, ÷10, 255=invalid)
+            case 0xC3:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated position accuracy");
+                    break;
+                }
+                const accuracy = bytes[idx++];
+                data.positionAccuracy = accuracy === 255 ? null : Number((accuracy / 10).toFixed(1));
+                break;
+
+                // ========== ELECTRICAL FIRE MONITOR (EF5600-DN1) ==========
+                // Type 0xC6: Electrical fire data (variable length, 103 bytes)
+            case 0xC6:
+                if (idx >= bytes.length) {
+                    warnings.push("Missing electrical data length");
+                    break;
+                }
+                const elecDataLen = bytes[idx++];
+                if (idx + elecDataLen > bytes.length) {
+                    warnings.push("Electrical data block exceeds payload, trimming");
+                }
+                const elecEndIdx = Math.min(idx + elecDataLen, bytes.length);
+                const elecBytes = bytes.slice(idx, elecEndIdx);
+                parseElectricalFireData(elecBytes, data);
+                idx = elecEndIdx;
+                break;
+
+                // Type 0xC7: Electrical fire alarm attribute (2 bytes)
+            case 0xC7:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated electrical alarm attribute");
+                    break;
+                }
+                const alarmAttribute = readUint16BE(bytes, idx);
+                const alarmAttrParsed = parseElectricalAlarm(alarmAttribute);
+                Object.assign(data, alarmAttrParsed);
+                data.electricalAlarm = alarmAttribute !== 0 ? 1 : 0;
+                data.electricalAlarmAttribute = alarmAttribute;
+                idx += 2;
+                break;
+
+                // Type 0xC8: Electrical fire alarm event (2 bytes)
+            case 0xC8:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated electrical alarm event");
+                    break;
+                }
+                const alarmEvent = readUint16BE(bytes, idx);
+                const alarmEventParsed = parseElectricalAlarm(alarmEvent);
+                data.electricalAlarmEvent = alarmEvent;
+                data.alarmEventActive = alarmEvent !== 0 ? 1 : 0;
+                Object.keys(alarmEventParsed).forEach(key => {
+                    if (key !== 'anyAlarm') {
+                        data[key + 'Event'] = alarmEventParsed[key];
+                    }
+                });
+                idx += 2;
+                break;
+
+                // Type 0xC0: Vibration sensor alarm status (2 bytes, big-endian)
+            case 0xC0:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated vibration alarm status");
+                    break;
+                }
+                const vibAlarmStatus = readUint16BE(bytes, idx);
+                const vibAlarmParsed = parseVibrationAlarm(vibAlarmStatus);
+                Object.assign(data, vibAlarmParsed);
+                data.vibrationAlarmStatus = vibAlarmStatus;
+                idx += 2;
+                break;
+
+                // Type 0xC1: Vibration sensor alarm event (2 bytes, big-endian)
+            case 0xC1:
+                if (idx + 2 > bytes.length) {
+                    warnings.push("Truncated vibration alarm event");
+                    break;
+                }
+                const vibAlarmEvent = readUint16BE(bytes, idx);
+                data.vibrationAlarmEvent = vibAlarmEvent;
+                data.alarmEventActive = vibAlarmEvent !== 0 ? 1 : 0;
+                idx += 2;
+                break;
+
+                // ========== SAFETY HELMET ALARMS (SC001) ==========
+                // Type 0xCB: Fall detection alarm status (1 byte)
+            case 0xCB:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated fall detection alarm");
+                    break;
+                }
+                data.fallAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xCC: Fall detection alarm event (1 byte)
+            case 0xCC:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated fall detection event");
+                    break;
+                }
+                data.fallAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xCD: Helmet removal alarm status (1 byte)
+            case 0xCD:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated helmet removal alarm");
+                    break;
+                }
+                data.helmetRemovalAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xCE: Helmet removal alarm event (1 byte)
+            case 0xCE:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated helmet removal event");
+                    break;
+                }
+                data.helmetRemovalAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xCF: Proximity to electricity alarm status (1 byte)
+            case 0xCF:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated proximity to electricity alarm");
+                    break;
+                }
+                data.electricityProximityAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD0: Proximity to electricity alarm event (1 byte)
+            case 0xD0:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated proximity to electricity event");
+                    break;
+                }
+                data.electricityProximityAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD1: Impact alarm status (1 byte)
+            case 0xD1:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated impact alarm");
+                    break;
+                }
+                data.impactAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD2: Impact alarm event (1 byte)
+            case 0xD2:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated impact event");
+                    break;
+                }
+                data.impactAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD3: Silence alarm status (1 byte)
+            case 0xD3:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated silence alarm");
+                    break;
+                }
+                data.silenceAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD4: Silence alarm event (1 byte)
+            case 0xD4:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated silence event");
+                    break;
+                }
+                data.silenceAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD5: Height access alarm status (1 byte)
+            case 0xD5:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated height access alarm");
+                    break;
+                }
+                data.heightAccessAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // Type 0xD6: Height access alarm event (1 byte)
+            case 0xD6:
+                if (idx >= bytes.length) {
+                    warnings.push("Truncated height access event");
+                    break;
+                }
+                data.heightAccessAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
+                break;
+
+                // ========== ALTITUDE (SC001) ==========
+                // Type 0xD8: Altitude (4 bytes unsigned, big-endian, ÷10, unit: m)
+            case 0xD8:
+                if (idx + 4 > bytes.length) {
+                    warnings.push("Truncated altitude");
+                    break;
+                }
+                const altitude = readUint32BE(bytes, idx);
+                data.altitude = Number((altitude / 10).toFixed(1));
+                idx += 4;
+                break;
+
+                // ========== BEACON DATA (CM100, SC001) ==========
+                // Type 0xD9: Beacon data (variable length)
+            case 0xD9:
+                if (idx >= bytes.length) {
+                    warnings.push("Missing beacon data length");
+                    break;
+                }
+                const beaconDataLen = bytes[idx++];
+                if (idx + beaconDataLen > bytes.length) {
+                    warnings.push("Beacon data block exceeds payload, trimming");
+                }
+                const beaconEndIdx = Math.min(idx + beaconDataLen, bytes.length);
+                const beaconBytes = bytes.slice(idx, beaconEndIdx);
+                parseBeaconData(beaconBytes, data);
+                idx = beaconEndIdx;
+                break;
+
+            default:
+                // Unknown type - skip based on common type lengths
+                warnings.push(`Unknown type 0x${type.toString(16)} at position ${idx-1}, skipping`);
+                if (idx < bytes.length)
+                    idx++;
                 break;
             }
-            const vibAlarmStatus = readUint16BE(bytes, idx);
-            const vibAlarmParsed = parseVibrationAlarm(vibAlarmStatus);
-            Object.assign(data, vibAlarmParsed);
-            data.vibrationAlarmStatus = vibAlarmStatus;
-            idx += 2;
-            break;
-
-            // Type 0xC1: Vibration sensor alarm event (2 bytes, big-endian)
-        case 0xC1:
-            if (idx + 2 > bytes.length) {
-                warnings.push("Truncated vibration alarm event");
-                break;
-            }
-            const vibAlarmEvent = readUint16BE(bytes, idx);
-            data.vibrationAlarmEvent = vibAlarmEvent;
-            data.alarmEventActive = vibAlarmEvent !== 0 ? 1 : 0;
-            idx += 2;
-            break;
-
-            // ========== SAFETY HELMET ALARMS (SC001) ==========
-            // Type 0xCB: Fall detection alarm status (1 byte)
-        case 0xCB:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated fall detection alarm");
-                break;
-            }
-            data.fallAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xCC: Fall detection alarm event (1 byte)
-        case 0xCC:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated fall detection event");
-                break;
-            }
-            data.fallAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xCD: Helmet removal alarm status (1 byte)
-        case 0xCD:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated helmet removal alarm");
-                break;
-            }
-            data.helmetRemovalAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xCE: Helmet removal alarm event (1 byte)
-        case 0xCE:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated helmet removal event");
-                break;
-            }
-            data.helmetRemovalAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xCF: Proximity to electricity alarm status (1 byte)
-        case 0xCF:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated proximity to electricity alarm");
-                break;
-            }
-            data.electricityProximityAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD0: Proximity to electricity alarm event (1 byte)
-        case 0xD0:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated proximity to electricity event");
-                break;
-            }
-            data.electricityProximityAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD1: Impact alarm status (1 byte)
-        case 0xD1:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated impact alarm");
-                break;
-            }
-            data.impactAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD2: Impact alarm event (1 byte)
-        case 0xD2:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated impact event");
-                break;
-            }
-            data.impactAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD3: Silence alarm status (1 byte)
-        case 0xD3:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated silence alarm");
-                break;
-            }
-            data.silenceAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD4: Silence alarm event (1 byte)
-        case 0xD4:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated silence event");
-                break;
-            }
-            data.silenceAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD5: Height access alarm status (1 byte)
-        case 0xD5:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated height access alarm");
-                break;
-            }
-            data.heightAccessAlarmStatus = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // Type 0xD6: Height access alarm event (1 byte)
-        case 0xD6:
-            if (idx >= bytes.length) {
-                warnings.push("Truncated height access event");
-                break;
-            }
-            data.heightAccessAlarmEvent = bytes[idx++] === 0x01 ? 1 : 0;
-            break;
-
-            // ========== ALTITUDE (SC001) ==========
-            // Type 0xD8: Altitude (4 bytes unsigned, big-endian, ÷10, unit: m)
-        case 0xD8:
-            if (idx + 4 > bytes.length) {
-                warnings.push("Truncated altitude");
-                break;
-            }
-            const altitude = readUint32BE(bytes, idx);
-            data.altitude = Number((altitude / 10).toFixed(1));
-            idx += 4;
-            break;
-
-            // ========== BEACON DATA (CM100, SC001) ==========
-            // Type 0xD9: Beacon data (variable length)
-        case 0xD9:
-            if (idx >= bytes.length) {
-                warnings.push("Missing beacon data length");
-                break;
-            }
-            const beaconDataLen = bytes[idx++];
-            if (idx + beaconDataLen > bytes.length) {
-                warnings.push("Beacon data block exceeds payload, trimming");
-            }
-            const beaconEndIdx = Math.min(idx + beaconDataLen, bytes.length);
-            const beaconBytes = bytes.slice(idx, beaconEndIdx);
-            parseBeaconData(beaconBytes, data);
-            idx = beaconEndIdx;
-            break;
-
-        default:
-            // Unknown type - skip based on common type lengths
-            warnings.push(`Unknown type 0x${type.toString(16)} at position ${idx-1}, skipping`);
-            if (idx < bytes.length)
-                idx++;
-            break;
         } catch (error) {
             errors.push(`Parse error at type 0x${type.toString(16)}: ${error.message}`);
             break;
@@ -2587,4 +2589,3 @@ function encodeDownlink(input) {
         warnings
     };
 }
-
