@@ -518,19 +518,11 @@ function parseModbusBlock(modBytes, out) {
  * @param {object} out - Output object to populate
  */
 function parseElectricalFireData(elecBytes, out) {
-    if (!elecBytes || elecBytes.length < 103) {
-        console.warn("Electrical fire data too short");
-        return;
+     if (!elecBytes || elecBytes.length < 102) {
+        throw new Error(`Electrical fire data too short: got ${elecBytes ? elecBytes.length : 0} bytes, expected 102 bytes`);
     }
 
     let idx = 0;
-
-    // Check length byte (should be 0x66 = 102 bytes of data)
-    const dataLength = elecBytes[idx++];
-    if (dataLength !== 0x66) {
-        console.warn(`Unexpected electrical data length: 0x${dataLength.toString(16)}`);
-        return;
-    }
 
     // Parse voltages (÷10)
     out.voltageA = readUint16BE(elecBytes, idx) / 10.0;
@@ -679,7 +671,7 @@ function parseElectricalAlarm(alarmBits) {
  */
 function parseBeaconData(beaconBytes, out) {
     if (!beaconBytes || beaconBytes.length < 6) {
-        console.warn("Beacon data too short");
+        throw new Error("Beacon data too short");
         return;
     }
 
@@ -688,7 +680,7 @@ function parseBeaconData(beaconBytes, out) {
 
     // Check if length byte matches actual data
     if (beaconBytes.length < dataLength + 1) {
-        console.warn("Beacon data length mismatch");
+        throw new Error("Beacon data length mismatch");
         return;
     }
 
@@ -748,7 +740,7 @@ function parseBeaconData(beaconBytes, out) {
  */
 function parseSimpleBeaconData(beaconBytes, out, beaconIndex) {
     if (!beaconBytes || beaconBytes.length < 8) {
-        console.warn(`Beacon ${beaconIndex} data too short`);
+        throw new Error(`Beacon ${beaconIndex} data too short`);
         return;
     }
 
@@ -756,7 +748,7 @@ function parseSimpleBeaconData(beaconBytes, out, beaconIndex) {
     const dataLength = beaconBytes[idx++];
 
     if (dataLength !== 0x07) {
-        console.warn(`Unexpected beacon data length: 0x${dataLength.toString(16)}`);
+        throw new Error(`Unexpected beacon data length: 0x${dataLength.toString(16)}`);
         return;
     }
 
@@ -802,7 +794,7 @@ function parseSimpleBeaconData(beaconBytes, out, beaconIndex) {
  */
 function parseVibrationData(vibBytes, out) {
     if (!vibBytes || vibBytes.length < 31) {
-        console.warn("Vibration data too short");
+        throw new Error("Vibration data too short");
         return;
     }
 
@@ -810,7 +802,7 @@ function parseVibrationData(vibBytes, out) {
     const dataLength = vibBytes[idx++];
 
     if (dataLength !== 0x1E) {
-        console.warn(`Unexpected vibration data length: 0x${dataLength.toString(16)}`);
+        throw new Error(`Unexpected vibration data length: 0x${dataLength.toString(16)}`);
         return;
     }
 
